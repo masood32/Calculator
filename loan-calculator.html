@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loan Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    header p { color: var(--muted); margin-top: 6px; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border: 2px solid var(--border);
+      border-radius: 50px;
+      background: var(--card);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #eff6ff;
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrap span {
+      position: absolute;
+      left: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+    .input-wrap span.suffix { left: auto; right: 12px; }
+    .field input {
+      width: 100%;
+      padding: 12px 16px 12px 32px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #f8fafc;
+    }
+    .field input.no-prefix { padding-left: 16px; }
+    .field input.has-suffix { padding-right: 40px; }
+    .field input:focus { border-color: var(--primary); background: #fff; }
+
+    input[type=range] {
+      width: 100%;
+      margin-top: 8px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .calc-btn {
+      margin-top: 24px;
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .calc-btn:hover { background: var(--primary-dark); }
+
+    /* Results */
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .result-box {
+      background: #f8fafc;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 14px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .result-box.highlight { border-color: var(--primary); background: #eff6ff; }
+    .result-box .label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .result-box .value { font-size: 1.4rem; font-weight: 800; color: var(--text); }
+    .result-box.highlight .value { color: var(--primary); }
+    .result-box.green .value { color: var(--secondary); }
+    .result-box.red .value { color: var(--danger); }
+
+    /* Donut chart */
+    .chart-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding: 8px 0;
+    }
+    .donut-container { position: relative; width: 180px; height: 180px; }
+    .donut-container canvas { width: 100% !important; height: 100% !important; }
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .donut-center .dc-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+    .donut-center .dc-value { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+
+    .legend { display: flex; flex-direction: column; gap: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 10px; }
+    .legend-dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+    .legend-item span { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+    .legend-item small { font-size: 0.75rem; color: var(--muted); }
+
+    /* Amortization table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead th {
+      background: #f1f5f9;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 14px;
+      text-align: right;
+    }
+    thead th:first-child { text-align: left; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody td { padding: 9px 14px; text-align: right; border-bottom: 1px solid var(--border); }
+    tbody td:first-child { text-align: left; font-weight: 600; }
+    tbody tr:hover { background: #eff6ff; }
+    tfoot td { padding: 10px 14px; text-align: right; font-weight: 700; background: #f1f5f9; border-top: 2px solid var(--border); }
+    tfoot td:first-child { text-align: left; }
+
+    .table-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .table-controls select {
+      padding: 6px 12px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+    .table-controls label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+
+    /* Compare panel */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 600px) { .compare-grid { grid-template-columns: 1fr; } }
+    .compare-card { border: 2px solid var(--border); border-radius: 10px; padding: 18px; }
+    .compare-card h3 { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 14px; }
+    .compare-result-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .compare-result-row:last-child { border: none; }
+    .compare-result-row .cr-label { color: var(--muted); font-weight: 600; }
+    .compare-result-row .cr-value { font-weight: 700; }
+    .better { color: var(--secondary); }
+    .worse { color: var(--danger); }
+
+    .hidden { display: none; }
+    .info-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    @media (max-width: 500px) {
+      .card { padding: 18px 14px; }
+      header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#127968; Loan Calculator</h1>
+  <p>Calculate EMI, interest rate, loan amount, and tenure instantly</p>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showPanel('emi')">EMI Calculator</button>
+    <button class="tab-btn" onclick="showPanel('rate')">Find Rate</button>
+    <button class="tab-btn" onclick="showPanel('amount')">Find Loan Amount</button>
+    <button class="tab-btn" onclick="showPanel('tenure')">Find Tenure</button>
+    <button class="tab-btn" onclick="showPanel('compare')">Compare Loans</button>
+  </div>
+
+  <!-- ===== EMI PANEL ===== -->
+  <div id="panel-emi" class="panel active">
+    <div class="card">
+      <h2>&#128200; EMI Calculator</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Principal Amount</label>
+          <div class="input-wrap"><span>&#8377;</span>
+            <input type="number" id="emi-principal" value="500000" min="1000" oninput="syncRange('emi-principal','r-emi-principal')" />
+          </div>
+          <input type="range" id="r-emi-principal" min="10000" max="10000000" step="10000" value="500000" oninput="syncField('r-emi-principal','emi-principal')" />
+        </div>
+        <div class="field">
+          <label>Annual Interest Rate</label>
+          <div class="input-wrap">
+            <input type="number" id="emi-rate" value="8.5" step="0.1" min="0.1" max="50" class="no-prefix has-suffix" oninput="syncRange('emi-rate','r-emi-rate')" />
+            <span class="suffix">%</span>
+          </div>
+          <input type="range" id="r-emi-rate" min="1" max="30" step="0.1" value="8.5" oninput="syncField('r-emi-rate','emi-rate')" />
+        </div>
+        <div class="field">
+          <label>Loan Tenure</label>
+          <div class="input-wrap">
+            <input type="number" id="emi-tenure" value="60" min="1" class="no-prefix has-suffix" oninput="syncRange('emi-tenure','r-emi-tenure')" />
+            <span class="suffix" id="emi-tenure-unit">Mo</span>
+          </div>
+          <input type="range" id="r-emi-tenure" min="1" max="360" step="1" value="60" oninput="syncField('r-emi-tenure','emi-tenure')" />
+          <div style="margin-top:8px;display:flex;gap:10px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="emi-unit" value="months" checked onchange="changeUnit('emi')"> Months
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="emi-unit" value="years" onchange="changeUnit('emi')"> Years
+            </label>
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcEMI()">Calculate EMI</button>
+    </div>
+
+    <div class="card hidden" id="emi-results">
+      <h2>&#9989; Results</h2>
+      <div class="result-grid">
+        <div class="result-box highlight">
+          <div class="label">Monthly EMI</div>
+          <div class="value" id="res-emi">-</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Principal</div>
+          <div class="value" id="res-principal">-</div>
+        </div>
+        <div class="result-box red">
+          <div class="label">Total Interest</div>
+          <div class="value" id="res-interest">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="label">Total Payment</div>
+          <div class="value" id="res-total">-</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Interest %</div>
+          <div class="value" id="res-ipct">-</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Tenure</div>
+          <div class="value" id="res-tenure">-</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="donut-container">
+          <canvas id="donut-emi"></canvas>
+          <div class="donut-center">
+            <span class="dc-label">Total</span>
+            <span class="dc-value" id="donut-total">-</span>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#2563eb"></div>
+            <div><span id="leg-principal">Principal</span><br><small style="color:var(--muted)">Loan amount</small></div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#ef4444"></div>
+            <div><span id="leg-interest">Interest</span><br><small style="color:var(--muted)">Cost of borrowing</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="emi-schedule">
+      <h2>&#128203; Amortization Schedule</h2>
+      <div class="table-controls">
+        <label>View by:</label>
+        <select id="sched-view" onchange="renderSchedule()">
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table id="sched-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Opening Balance</th>
+              <th>EMI</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Closing Balance</th>
+            </tr>
+          </thead>
+          <tbody id="sched-body"></tbody>
+          <tfoot id="sched-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FIND RATE PANEL ===== -->
+  <div id="panel-rate" class="panel">
+    <div class="card">
+      <h2>&#128269; Find Interest Rate</h2>
+      <div class="info-banner">Enter Principal, EMI amount, and Tenure — we'll calculate the annual interest rate.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Principal Amount</label>
+          <div class="input-wrap"><span>&#8377;</span>
+            <input type="number" id="rate-principal" value="500000" min="1000" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Monthly EMI</label>
+          <div class="input-wrap"><span>&#8377;</span>
+            <input type="number" id="rate-emi" value="10000" min="1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Loan Tenure</label>
+          <div class="input-wrap">
+            <input type="number" id="rate-tenure" value="60" min="1" class="no-prefix has-suffix" />
+            <span class="suffix" id="rate-tenure-unit">Mo</span>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:10px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="rate-unit" value="months" checked onchange="changeUnit('rate')"> Months
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="rate-unit" value="years" onchange="changeUnit('rate')"> Years
+            </label>
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcRate()">Find Interest Rate</button>
+    </div>
+    <div class="card hidden" id="rate-results">
+      <h2>&#9989; Results</h2>
+      <div class="result-grid">
+        <div class="result-box highlight">
+          <div class="label">Annual Interest Rate</div>
+          <div class="value" id="rres-rate">-</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Monthly Rate</div>
+          <div class="value" id="rres-mrate">-</div>
+        </div>
+        <div class="result-box red">
+          <div class="label">Total Interest</div>
+          <div class="value" id="rres-interest">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="label">Total Payment</div>
+          <div class="value" id="rres-total">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FIND AMOUNT PANEL ===== -->
+  <div id="panel-amount" class="panel">
+    <div class="card">
+      <h2>&#128176; Find Loan Amount</h2>
+      <div class="info-banner">Enter EMI, Interest Rate, and Tenure — we'll calculate the loan amount you can borrow.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Monthly EMI</label>
+          <div class="input-wrap"><span>&#8377;</span>
+            <input type="number" id="amt-emi" value="10000" min="1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Annual Interest Rate</label>
+          <div class="input-wrap">
+            <input type="number" id="amt-rate" value="8.5" step="0.1" min="0.1" max="50" class="no-prefix has-suffix" />
+            <span class="suffix">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Loan Tenure</label>
+          <div class="input-wrap">
+            <input type="number" id="amt-tenure" value="60" min="1" class="no-prefix has-suffix" />
+            <span class="suffix" id="amt-tenure-unit">Mo</span>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:10px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="amt-unit" value="months" checked onchange="changeUnit('amt')"> Months
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="amt-unit" value="years" onchange="changeUnit('amt')"> Years
+            </label>
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcAmount()">Find Loan Amount</button>
+    </div>
+    <div class="card hidden" id="amount-results">
+      <h2>&#9989; Results</h2>
+      <div class="result-grid">
+        <div class="result-box highlight">
+          <div class="label">Loan Amount</div>
+          <div class="value" id="ares-principal">-</div>
+        </div>
+        <div class="result-box red">
+          <div class="label">Total Interest</div>
+          <div class="value" id="ares-interest">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="label">Total Payment</div>
+          <div class="value" id="ares-total">-</div>
+        </div>
+        <div class="result-box">
+          <div class="label">Interest %</div>
+          <div class="value" id="ares-ipct">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FIND TENURE PANEL ===== -->
+  <div id="panel-tenure" class="panel">
+    <div class="card">
+      <h2>&#128197; Find Tenure</h2>
+      <div class="info-banner">Enter Principal, EMI, and Interest Rate — we'll calculate how many months/years to repay.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Principal Amount</label>
+          <div class="input-wrap"><span>&#8377;</span>
+            <input type="number" id="ten-principal" value="500000" min="1000" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Monthly EMI</label>
+          <div class="input-wrap"><span>&#8377;</span>
+            <input type="number" id="ten-emi" value="10000" min="1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Annual Interest Rate</label>
+          <div class="input-wrap">
+            <input type="number" id="ten-rate" value="8.5" step="0.1" min="0.1" max="50" class="no-prefix has-suffix" />
+            <span class="suffix">%</span>
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcTenure()">Find Tenure</button>
+    </div>
+    <div class="card hidden" id="tenure-results">
+      <h2>&#9989; Results</h2>
+      <div class="result-grid">
+        <div class="result-box highlight">
+          <div class="label">Tenure (Months)</div>
+          <div class="value" id="tres-months">-</div>
+        </div>
+        <div class="result-box highlight">
+          <div class="label">Tenure (Years)</div>
+          <div class="value" id="tres-years">-</div>
+        </div>
+        <div class="result-box red">
+          <div class="label">Total Interest</div>
+          <div class="value" id="tres-interest">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="label">Total Payment</div>
+          <div class="value" id="tres-total">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== COMPARE PANEL ===== -->
+  <div id="panel-compare" class="panel">
+    <div class="card">
+      <h2>&#9878; Compare Two Loans</h2>
+      <div class="compare-grid">
+        <div>
+          <h3 style="margin-bottom:14px;font-size:1rem;color:var(--primary)">Loan A</h3>
+          <div class="field" style="margin-bottom:14px">
+            <label>Principal</label>
+            <div class="input-wrap"><span>&#8377;</span><input type="number" id="ca-principal" value="500000" /></div>
+          </div>
+          <div class="field" style="margin-bottom:14px">
+            <label>Annual Rate</label>
+            <div class="input-wrap">
+              <input type="number" id="ca-rate" value="8.5" step="0.1" class="no-prefix has-suffix" />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tenure (Months)</label>
+            <div class="input-wrap"><input type="number" id="ca-tenure" value="60" class="no-prefix" /></div>
+          </div>
+        </div>
+        <div>
+          <h3 style="margin-bottom:14px;font-size:1rem;color:var(--secondary)">Loan B</h3>
+          <div class="field" style="margin-bottom:14px">
+            <label>Principal</label>
+            <div class="input-wrap"><span>&#8377;</span><input type="number" id="cb-principal" value="500000" /></div>
+          </div>
+          <div class="field" style="margin-bottom:14px">
+            <label>Annual Rate</label>
+            <div class="input-wrap">
+              <input type="number" id="cb-rate" value="10" step="0.1" class="no-prefix has-suffix" />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tenure (Months)</label>
+            <div class="input-wrap"><input type="number" id="cb-tenure" value="60" class="no-prefix" /></div>
+          </div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="compareLoansFn()">Compare Loans</button>
+    </div>
+    <div class="card hidden" id="compare-results">
+      <h2>&#9989; Comparison Results</h2>
+      <div class="compare-grid" id="compare-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Donut Chart via Canvas (no external lib needed) -->
+<script>
+  // ---- Helpers ----
+  const fmt = v => '₹' + Math.round(v).toLocaleString('en-IN');
+  const fmtD = v => '₹' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function syncRange(fieldId, rangeId) {
+    document.getElementById(rangeId).value = document.getElementById(fieldId).value;
+  }
+  function syncField(rangeId, fieldId) {
+    document.getElementById(fieldId).value = document.getElementById(rangeId).value;
+  }
+
+  function changeUnit(prefix) {
+    const val = document.querySelector(`input[name="${prefix}-unit"]:checked`).value;
+    document.getElementById(`${prefix}-tenure-unit`).textContent = val === 'years' ? 'Yr' : 'Mo';
+    if (prefix === 'emi') {
+      const r = document.getElementById('r-emi-tenure');
+      r.max = val === 'years' ? 30 : 360;
+      r.step = val === 'years' ? 1 : 1;
+    }
+  }
+
+  function getMonths(prefix) {
+    const raw = parseFloat(document.getElementById(`${prefix}-tenure`).value) || 0;
+    const unit = document.querySelector(`input[name="${prefix}-unit"]:checked`).value;
+    return unit === 'years' ? Math.round(raw * 12) : raw;
+  }
+
+  function calcEMIVal(P, annualRate, months) {
+    const r = annualRate / 100 / 12;
+    if (r === 0) return P / months;
+    return P * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+  }
+
+  // ---- EMI Calculator ----
+  let scheduleData = [];
+
+  function calcEMI() {
+    const P = parseFloat(document.getElementById('emi-principal').value);
+    const annual = parseFloat(document.getElementById('emi-rate').value);
+    const months = getMonths('emi');
+
+    if (!P || !annual || !months) return alert('Please fill all fields.');
+
+    const emi = calcEMIVal(P, annual, months);
+    const total = emi * months;
+    const interest = total - P;
+
+    document.getElementById('res-emi').textContent = fmt(emi);
+    document.getElementById('res-principal').textContent = fmt(P);
+    document.getElementById('res-interest').textContent = fmt(interest);
+    document.getElementById('res-total').textContent = fmt(total);
+    document.getElementById('res-ipct').textContent = ((interest / total) * 100).toFixed(1) + '%';
+    document.getElementById('res-tenure').textContent = months + ' months';
+    document.getElementById('donut-total').textContent = fmt(total).replace('₹','₹');
+    document.getElementById('leg-principal').textContent = 'Principal: ' + fmt(P);
+    document.getElementById('leg-interest').textContent = 'Interest: ' + fmt(interest);
+
+    document.getElementById('emi-results').classList.remove('hidden');
+    drawDonut('donut-emi', P, interest);
+
+    // Build schedule
+    scheduleData = buildSchedule(P, annual, months, emi);
+    document.getElementById('emi-schedule').classList.remove('hidden');
+    renderSchedule();
+  }
+
+  function buildSchedule(P, annual, months, emi) {
+    const r = annual / 100 / 12;
+    let balance = P;
+    const rows = [];
+    for (let i = 1; i <= months; i++) {
+      const interestPart = balance * r;
+      const principalPart = emi - interestPart;
+      const closing = Math.max(0, balance - principalPart);
+      rows.push({ month: i, opening: balance, emi, principal: principalPart, interest: interestPart, closing });
+      balance = closing;
+    }
+    return rows;
+  }
+
+  function renderSchedule() {
+    const view = document.getElementById('sched-view').value;
+    const tbody = document.getElementById('sched-body');
+    const tfoot = document.getElementById('sched-foot');
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+
+    if (!scheduleData.length) return;
+
+    let rows = scheduleData;
+    if (view === 'yearly') {
+      const ymap = {};
+      rows.forEach(r => {
+        const yr = Math.ceil(r.month / 12);
+        if (!ymap[yr]) ymap[yr] = { year: yr, opening: r.opening, emi: 0, principal: 0, interest: 0, closing: r.closing };
+        ymap[yr].emi += r.emi;
+        ymap[yr].principal += r.principal;
+        ymap[yr].interest += r.interest;
+        ymap[yr].closing = r.closing;
+      });
+      rows = Object.values(ymap);
+    }
+
+    let totEMI = 0, totP = 0, totI = 0;
+    rows.forEach(r => {
+      totEMI += r.emi; totP += r.principal; totI += r.interest;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${view === 'yearly' ? 'Year ' + r.year : 'Month ' + r.month}</td>
+        <td>${fmt(r.opening)}</td><td>${fmt(r.emi)}</td>
+        <td>${fmt(r.principal)}</td><td>${fmt(r.interest)}</td>
+        <td>${fmt(r.closing)}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    tfoot.innerHTML = `<tr><td>Total</td><td>-</td><td>${fmt(totEMI)}</td><td>${fmt(totP)}</td><td>${fmt(totI)}</td><td>-</td></tr>`;
+  }
+
+  // ---- Find Rate ----
+  function calcRate() {
+    const P = parseFloat(document.getElementById('rate-principal').value);
+    const emi = parseFloat(document.getElementById('rate-emi').value);
+    const months = getMonths('rate');
+    if (!P || !emi || !months) return alert('Please fill all fields.');
+    if (emi * months <= P) return alert('EMI × Tenure must be greater than principal.');
+
+    // Binary search for monthly rate
+    let lo = 0.0001, hi = 10, r = 0;
+    for (let i = 0; i < 1000; i++) {
+      r = (lo + hi) / 2;
+      const calcEMI = P * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+      if (Math.abs(calcEMI - emi) < 0.001) break;
+      calcEMI > emi ? hi = r : lo = r;
+    }
+    const annual = r * 12 * 100;
+    const total = emi * months;
+    const interest = total - P;
+
+    document.getElementById('rres-rate').textContent = annual.toFixed(2) + '%';
+    document.getElementById('rres-mrate').textContent = (r * 100).toFixed(4) + '%';
+    document.getElementById('rres-interest').textContent = fmt(interest);
+    document.getElementById('rres-total').textContent = fmt(total);
+    document.getElementById('rate-results').classList.remove('hidden');
+  }
+
+  // ---- Find Amount ----
+  function calcAmount() {
+    const emi = parseFloat(document.getElementById('amt-emi').value);
+    const annual = parseFloat(document.getElementById('amt-rate').value);
+    const months = getMonths('amt');
+    if (!emi || !annual || !months) return alert('Please fill all fields.');
+
+    const r = annual / 100 / 12;
+    const P = emi * (Math.pow(1 + r, months) - 1) / (r * Math.pow(1 + r, months));
+    const total = emi * months;
+    const interest = total - P;
+
+    document.getElementById('ares-principal').textContent = fmt(P);
+    document.getElementById('ares-interest').textContent = fmt(interest);
+    document.getElementById('ares-total').textContent = fmt(total);
+    document.getElementById('ares-ipct').textContent = ((interest / total) * 100).toFixed(1) + '%';
+    document.getElementById('amount-results').classList.remove('hidden');
+  }
+
+  // ---- Find Tenure ----
+  function calcTenure() {
+    const P = parseFloat(document.getElementById('ten-principal').value);
+    const emi = parseFloat(document.getElementById('ten-emi').value);
+    const annual = parseFloat(document.getElementById('ten-rate').value);
+    if (!P || !emi || !annual) return alert('Please fill all fields.');
+
+    const r = annual / 100 / 12;
+    if (emi <= P * r) return alert('EMI is too low to cover monthly interest. Increase EMI.');
+
+    const months = Math.ceil(-Math.log(1 - (P * r) / emi) / Math.log(1 + r));
+    const total = emi * months;
+    const interest = total - P;
+    const years = (months / 12).toFixed(1);
+
+    document.getElementById('tres-months').textContent = months + ' mo';
+    document.getElementById('tres-years').textContent = years + ' yr';
+    document.getElementById('tres-interest').textContent = fmt(interest);
+    document.getElementById('tres-total').textContent = fmt(total);
+    document.getElementById('tenure-results').classList.remove('hidden');
+  }
+
+  // ---- Compare Loans ----
+  function compareLoansFn() {
+    const loans = ['a', 'b'].map(x => ({
+      P: parseFloat(document.getElementById(`c${x}-principal`).value),
+      rate: parseFloat(document.getElementById(`c${x}-rate`).value),
+      months: parseInt(document.getElementById(`c${x}-tenure`).value),
+      label: x === 'a' ? 'Loan A' : 'Loan B',
+      color: x === 'a' ? '#2563eb' : '#10b981'
+    }));
+
+    if (loans.some(l => !l.P || !l.rate || !l.months)) return alert('Fill all fields for both loans.');
+
+    const results = loans.map(l => {
+      const emi = calcEMIVal(l.P, l.rate, l.months);
+      const total = emi * l.months;
+      const interest = total - l.P;
+      return { ...l, emi, total, interest };
+    });
+
+    const betterEMI = results[0].emi < results[1].emi ? 0 : 1;
+    const betterInt = results[0].interest < results[1].interest ? 0 : 1;
+    const betterTotal = results[0].total < results[1].total ? 0 : 1;
+
+    const container = document.getElementById('compare-cards');
+    container.innerHTML = results.map((r, i) => `
+      <div class="compare-card" style="border-color:${r.color}20;background:${r.color}08">
+        <h3 style="color:${r.color}">${r.label}</h3>
+        <div class="compare-result-row">
+          <span class="cr-label">Principal</span>
+          <span class="cr-value">${fmt(r.P)}</span>
+        </div>
+        <div class="compare-result-row">
+          <span class="cr-label">Annual Rate</span>
+          <span class="cr-value">${r.rate}%</span>
+        </div>
+        <div class="compare-result-row">
+          <span class="cr-label">Tenure</span>
+          <span class="cr-value">${r.months} months</span>
+        </div>
+        <div class="compare-result-row">
+          <span class="cr-label">Monthly EMI</span>
+          <span class="cr-value ${i === betterEMI ? 'better' : 'worse'}">${fmt(r.emi)}</span>
+        </div>
+        <div class="compare-result-row">
+          <span class="cr-label">Total Interest</span>
+          <span class="cr-value ${i === betterInt ? 'better' : 'worse'}">${fmt(r.interest)}</span>
+        </div>
+        <div class="compare-result-row">
+          <span class="cr-label">Total Payment</span>
+          <span class="cr-value ${i === betterTotal ? 'better' : 'worse'}">${fmt(r.total)}</span>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('compare-results').classList.remove('hidden');
+  }
+
+  // ---- Donut Chart (pure canvas) ----
+  function drawDonut(canvasId, principal, interest) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    canvas.width = 180; canvas.height = 180;
+    const ctx = canvas.getContext('2d');
+    const cx = 90, cy = 90, r = 75, inner = 50;
+    const total = principal + interest;
+    const pAngle = (principal / total) * 2 * Math.PI;
+    const iAngle = (interest / total) * 2 * Math.PI;
+    const gap = 0.03;
+    const start = -Math.PI / 2;
+
+    ctx.clearRect(0, 0, 180, 180);
+
+    // Principal slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start + gap, start + pAngle - gap);
+    ctx.closePath();
+    ctx.fillStyle = '#2563eb';
+    ctx.fill();
+
+    // Interest slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start + pAngle + gap, start + 2 * Math.PI - gap);
+    ctx.closePath();
+    ctx.fillStyle = '#ef4444';
+    ctx.fill();
+
+    // Inner circle (donut hole)
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, 2 * Math.PI);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+  }
+
+  // Init: auto calculate on load
+  window.addEventListener('load', () => {
+    calcEMI();
+  });
+</script>
+</body>
+</html>

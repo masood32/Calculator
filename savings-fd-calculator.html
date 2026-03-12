@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Savings & FD Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #7c3aed;
+      --primary-dark: #6d28d9;
+      --primary-light: #ede9fe;
+      --secondary: #10b981;
+      --secondary-light: #d1fae5;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --bg: #f5f3ff;
+      --card: #ffffff;
+      --text: #1e1b4b;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --radius: 14px;
+      --shadow: 0 4px 28px rgba(124,58,237,0.10);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 50px;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+    header h1 { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .tab-btn {
+      padding: 10px 22px;
+      border: 2px solid var(--border);
+      border-radius: 50px;
+      background: var(--card);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .container { max-width: 960px; margin: 0 auto; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .card-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .card-header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap .prefix {
+      position: absolute; left: 12px;
+      font-weight: 700; color: var(--muted); font-size: 0.9rem; pointer-events: none;
+    }
+    .input-wrap .suffix {
+      position: absolute; right: 12px;
+      font-weight: 700; color: var(--muted); font-size: 0.9rem; pointer-events: none;
+    }
+    .field input[type=number], .field select {
+      width: 100%;
+      padding: 12px 40px 12px 34px;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      font-size: 1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fafafa;
+      color: var(--text);
+      appearance: none;
+    }
+    .field input.no-prefix { padding-left: 14px; }
+    .field input.no-suffix { padding-right: 14px; }
+    .field input:focus, .field select:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+    }
+    input[type=range] {
+      width: 100%; margin-top: 8px;
+      accent-color: var(--primary); cursor: pointer;
+    }
+
+    .freq-tabs {
+      display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+    }
+    .freq-tab {
+      padding: 5px 12px; border: 2px solid var(--border);
+      border-radius: 6px; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; color: var(--muted); background: #fafafa;
+      transition: all 0.15s;
+    }
+    .freq-tab.active { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+    .calc-btn {
+      margin-top: 24px; width: 100%;
+      padding: 14px; background: var(--primary); color: #fff;
+      border: none; border-radius: 9px; font-size: 1rem;
+      font-weight: 700; cursor: pointer; transition: background 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .calc-btn:hover { background: var(--primary-dark); }
+
+    /* Results */
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px; margin-bottom: 22px;
+    }
+    .result-box {
+      background: #fafafa; border: 2px solid var(--border);
+      border-radius: 10px; padding: 16px 12px; text-align: center;
+    }
+    .result-box.primary { border-color: var(--primary); background: var(--primary-light); }
+    .result-box.green { border-color: var(--secondary); background: var(--secondary-light); }
+    .result-box.orange { border-color: var(--warning); background: #fffbeb; }
+    .result-box .rb-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .result-box .rb-value { font-size: 1.35rem; font-weight: 800; color: var(--text); }
+    .result-box.primary .rb-value { color: var(--primary); }
+    .result-box.green .rb-value { color: var(--secondary); }
+    .result-box.orange .rb-value { color: var(--warning); }
+
+    /* Chart */
+    .chart-section {
+      display: flex; align-items: center;
+      justify-content: center; flex-wrap: wrap;
+      gap: 32px; padding: 10px 0 16px;
+    }
+    .donut-wrap { position: relative; width: 190px; height: 190px; flex-shrink: 0; }
+    .donut-wrap canvas { width: 100% !important; height: 100% !important; }
+    .donut-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .donut-center .dc-sub { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+    .donut-center .dc-main { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+
+    .legend { display: flex; flex-direction: column; gap: 14px; }
+    .legend-item { display: flex; align-items: flex-start; gap: 10px; }
+    .legend-dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+    .legend-item .li-name { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+    .legend-item .li-val { font-size: 0.8rem; color: var(--muted); }
+
+    /* Bar Chart */
+    .bar-chart { padding: 10px 0; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 90px;
+      align-items: center;
+      gap: 10px; margin-bottom: 8px;
+    }
+    .bar-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-align: right; }
+    .bar-track { background: #f1f5f9; border-radius: 4px; height: 20px; position: relative; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; display: flex; align-items: center; }
+    .bar-invested { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+    .bar-returns { background: linear-gradient(90deg, #10b981, #34d399); }
+    .bar-value { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; max-height: 380px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    thead { position: sticky; top: 0; z-index: 1; }
+    thead th {
+      background: #f5f3ff; color: var(--primary);
+      font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 14px; text-align: right; border-bottom: 2px solid var(--border);
+    }
+    thead th:first-child { text-align: left; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    tbody td { padding: 9px 14px; text-align: right; border-bottom: 1px solid var(--border); }
+    tbody td:first-child { text-align: left; font-weight: 600; }
+    tbody tr:last-child td { border: none; }
+    tbody tr:hover { background: var(--primary-light); }
+    tfoot td { padding: 10px 14px; text-align: right; font-weight: 800; background: #f5f3ff; border-top: 2px solid var(--primary); color: var(--primary); }
+    tfoot td:first-child { text-align: left; }
+
+    .info-banner {
+      background: var(--primary-light);
+      border: 1px solid #c4b5fd;
+      border-radius: 8px; padding: 11px 15px;
+      font-size: 0.83rem; color: var(--primary);
+      margin-bottom: 20px; font-weight: 600;
+    }
+
+    .hidden { display: none; }
+    .section-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* Summary row under results */
+    .maturity-highlight {
+      background: linear-gradient(135deg, var(--primary) 0%, #a78bfa 100%);
+      border-radius: 12px; padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 22px; color: #fff;
+    }
+    .maturity-highlight .mh-label { font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
+    .maturity-highlight .mh-value { font-size: 2rem; font-weight: 800; }
+    .maturity-highlight .mh-sub { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
+
+    .tip-box {
+      background: #fffbeb; border: 1px solid #fde68a;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 0.82rem; color: #92400e; font-weight: 500;
+    }
+
+    @media (max-width: 500px) {
+      .card { padding: 18px 14px; }
+      header h1 { font-size: 1.5rem; }
+      .maturity-highlight { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">INVESTMENT TOOLS</div>
+  <h1>&#128200; Savings & FD Calculator</h1>
+  <p>Calculate returns on Fixed Deposits, Recurring Deposits, SIP, and Savings Goals</p>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showPanel('fd')">&#127981; FD Calculator</button>
+    <button class="tab-btn" onclick="showPanel('rd')">&#128197; RD Calculator</button>
+    <button class="tab-btn" onclick="showPanel('sip')">&#128176; SIP Calculator</button>
+    <button class="tab-btn" onclick="showPanel('goal')">&#127919; Goal Planner</button>
+    <button class="tab-btn" onclick="showPanel('compare')">&#9878; Compare</button>
+  </div>
+
+  <!-- ===== FD PANEL ===== -->
+  <div id="panel-fd" class="panel active">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">&#127981;</div>
+        <div>
+          <h2>Fixed Deposit Calculator</h2>
+          <p>Calculate maturity amount with simple or compound interest</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Principal Amount</label>
+          <div class="input-wrap">
+            <span class="prefix">&#8377;</span>
+            <input type="number" id="fd-principal" value="100000" min="1000" oninput="syncR('fd-principal','rfd-principal')" />
+          </div>
+          <input type="range" id="rfd-principal" min="5000" max="5000000" step="5000" value="100000" oninput="syncF('rfd-principal','fd-principal')" />
+        </div>
+        <div class="field">
+          <label>Annual Interest Rate</label>
+          <div class="input-wrap">
+            <input type="number" id="fd-rate" value="7.1" step="0.05" min="0.1" max="20" class="no-prefix" oninput="syncR('fd-rate','rfd-rate')" />
+            <span class="suffix">%</span>
+          </div>
+          <input type="range" id="rfd-rate" min="1" max="15" step="0.05" value="7.1" oninput="syncF('rfd-rate','fd-rate')" />
+        </div>
+        <div class="field">
+          <label>Tenure</label>
+          <div class="input-wrap">
+            <input type="number" id="fd-tenure" value="3" min="1" class="no-prefix" oninput="syncR('fd-tenure','rfd-tenure')" />
+            <span class="suffix" id="fd-tenure-unit">Yr</span>
+          </div>
+          <input type="range" id="rfd-tenure" min="1" max="10" step="1" value="3" oninput="syncF('rfd-tenure','fd-tenure')" />
+          <div style="margin-top:8px;display:flex;gap:10px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="fd-unit" value="years" checked onchange="fdUnitChange()"> Years
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer">
+              <input type="radio" name="fd-unit" value="months" onchange="fdUnitChange()"> Months
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Compounding Frequency</label>
+          <div class="input-wrap">
+            <select id="fd-freq" class="no-prefix no-suffix" style="padding:12px 14px;">
+              <option value="1">Annually</option>
+              <option value="2">Semi-Annually</option>
+              <option value="4" selected>Quarterly</option>
+              <option value="12">Monthly</option>
+              <option value="0">Simple Interest</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="tip-box" style="margin-top:16px">
+        &#128161; <strong>Tip:</strong> Most Indian banks compound FD interest quarterly. Senior citizens usually get 0.25%–0.5% extra rate.
+      </div>
+      <button class="calc-btn" onclick="calcFD()">Calculate Maturity Amount</button>
+    </div>
+
+    <div class="card hidden" id="fd-results">
+      <div class="maturity-highlight">
+        <div>
+          <div class="mh-label">Maturity Amount</div>
+          <div class="mh-value" id="fd-maturity">-</div>
+          <div class="mh-sub" id="fd-maturity-date">-</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mh-label">Total Interest Earned</div>
+          <div class="mh-value" id="fd-interest-big">-</div>
+          <div class="mh-sub" id="fd-rate-info">-</div>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-box primary">
+          <div class="rb-label">Principal</div>
+          <div class="rb-value" id="fd-res-principal">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="rb-label">Interest Earned</div>
+          <div class="rb-value" id="fd-res-interest">-</div>
+        </div>
+        <div class="result-box orange">
+          <div class="rb-label">Effective Yield</div>
+          <div class="rb-value" id="fd-res-yield">-</div>
+        </div>
+        <div class="result-box">
+          <div class="rb-label">Monthly Income</div>
+          <div class="rb-value" id="fd-res-monthly">-</div>
+        </div>
+        <div class="result-box">
+          <div class="rb-label">Tax (30%)</div>
+          <div class="rb-value" id="fd-res-tax">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="rb-label">Post-Tax Maturity</div>
+          <div class="rb-value" id="fd-res-posttax">-</div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="donut-wrap">
+          <canvas id="donut-fd" width="190" height="190"></canvas>
+          <div class="donut-center">
+            <span class="dc-sub">Maturity</span>
+            <span class="dc-main" id="fd-donut-label">-</span>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#7c3aed"></div>
+            <div>
+              <div class="li-name">Principal Invested</div>
+              <div class="li-val" id="fd-leg-principal">-</div>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#10b981"></div>
+            <div>
+              <div class="li-name">Interest Earned</div>
+              <div class="li-val" id="fd-leg-interest">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="fd-schedule">
+      <div class="card-header">
+        <div class="card-icon">&#128203;</div>
+        <div><h2>Year-wise Growth</h2><p>How your investment grows each year</p></div>
+      </div>
+      <div class="bar-chart" id="fd-bars"></div>
+      <div class="section-divider"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Opening Balance</th>
+              <th>Interest</th>
+              <th>Closing Balance</th>
+              <th>Total Return</th>
+            </tr>
+          </thead>
+          <tbody id="fd-table-body"></tbody>
+          <tfoot id="fd-table-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RD PANEL ===== -->
+  <div id="panel-rd" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">&#128197;</div>
+        <div>
+          <h2>Recurring Deposit Calculator</h2>
+          <p>Invest a fixed amount every month and watch it grow</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Monthly Investment</label>
+          <div class="input-wrap">
+            <span class="prefix">&#8377;</span>
+            <input type="number" id="rd-amount" value="5000" min="100" oninput="syncR('rd-amount','rrd-amount')" />
+          </div>
+          <input type="range" id="rrd-amount" min="500" max="200000" step="500" value="5000" oninput="syncF('rrd-amount','rd-amount')" />
+        </div>
+        <div class="field">
+          <label>Annual Interest Rate</label>
+          <div class="input-wrap">
+            <input type="number" id="rd-rate" value="7.0" step="0.05" min="0.1" max="15" class="no-prefix" oninput="syncR('rd-rate','rrd-rate')" />
+            <span class="suffix">%</span>
+          </div>
+          <input type="range" id="rrd-rate" min="1" max="15" step="0.05" value="7.0" oninput="syncF('rrd-rate','rd-rate')" />
+        </div>
+        <div class="field">
+          <label>Tenure (Months)</label>
+          <div class="input-wrap">
+            <input type="number" id="rd-tenure" value="24" min="3" max="120" class="no-prefix" oninput="syncR('rd-tenure','rrd-tenure')" />
+            <span class="suffix">Mo</span>
+          </div>
+          <input type="range" id="rrd-tenure" min="3" max="120" step="1" value="24" oninput="syncF('rrd-tenure','rd-tenure')" />
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcRD()">Calculate RD Maturity</button>
+    </div>
+
+    <div class="card hidden" id="rd-results">
+      <div class="maturity-highlight">
+        <div>
+          <div class="mh-label">Maturity Amount</div>
+          <div class="mh-value" id="rd-maturity">-</div>
+          <div class="mh-sub" id="rd-tenure-info">-</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mh-label">Total Interest</div>
+          <div class="mh-value" id="rd-interest-big">-</div>
+          <div class="mh-sub" id="rd-return-pct">-</div>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-box primary">
+          <div class="rb-label">Total Invested</div>
+          <div class="rb-value" id="rd-res-invested">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="rb-label">Interest Earned</div>
+          <div class="rb-value" id="rd-res-interest">-</div>
+        </div>
+        <div class="result-box orange">
+          <div class="rb-label">Monthly Deposit</div>
+          <div class="rb-value" id="rd-res-monthly">-</div>
+        </div>
+        <div class="result-box">
+          <div class="rb-label">Wealth Gained</div>
+          <div class="rb-value" id="rd-res-wealth">-</div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="donut-wrap">
+          <canvas id="donut-rd" width="190" height="190"></canvas>
+          <div class="donut-center">
+            <span class="dc-sub">Maturity</span>
+            <span class="dc-main" id="rd-donut-label">-</span>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#7c3aed"></div>
+            <div>
+              <div class="li-name">Amount Invested</div>
+              <div class="li-val" id="rd-leg-invested">-</div>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#10b981"></div>
+            <div>
+              <div class="li-name">Interest Earned</div>
+              <div class="li-val" id="rd-leg-interest">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="rd-schedule">
+      <div class="card-header">
+        <div class="card-icon">&#128203;</div>
+        <div><h2>Month-wise Breakdown</h2></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Deposit</th>
+              <th>Cumulative Invested</th>
+              <th>Interest This Month</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody id="rd-table-body"></tbody>
+          <tfoot id="rd-table-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SIP PANEL ===== -->
+  <div id="panel-sip" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">&#128176;</div>
+        <div>
+          <h2>SIP / Lumpsum Calculator</h2>
+          <p>Mutual fund returns with expected annual growth rate</p>
+        </div>
+      </div>
+      <div class="tabs" style="justify-content:flex-start;margin-bottom:16px">
+        <button class="tab-btn active" id="sip-mode-btn" onclick="setSIPMode('sip')" style="padding:7px 16px;font-size:0.8rem">SIP (Monthly)</button>
+        <button class="tab-btn" id="lump-mode-btn" onclick="setSIPMode('lump')" style="padding:7px 16px;font-size:0.8rem">Lumpsum</button>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label id="sip-amount-label">Monthly SIP Amount</label>
+          <div class="input-wrap">
+            <span class="prefix">&#8377;</span>
+            <input type="number" id="sip-amount" value="10000" min="500" oninput="syncR('sip-amount','rsip-amount')" />
+          </div>
+          <input type="range" id="rsip-amount" min="500" max="500000" step="500" value="10000" oninput="syncF('rsip-amount','sip-amount')" />
+        </div>
+        <div class="field">
+          <label>Expected Annual Return</label>
+          <div class="input-wrap">
+            <input type="number" id="sip-rate" value="12" step="0.5" min="1" max="50" class="no-prefix" oninput="syncR('sip-rate','rsip-rate')" />
+            <span class="suffix">%</span>
+          </div>
+          <input type="range" id="rsip-rate" min="1" max="30" step="0.5" value="12" oninput="syncF('rsip-rate','sip-rate')" />
+        </div>
+        <div class="field">
+          <label>Investment Period (Years)</label>
+          <div class="input-wrap">
+            <input type="number" id="sip-tenure" value="10" min="1" max="40" class="no-prefix" oninput="syncR('sip-tenure','rsip-tenure')" />
+            <span class="suffix">Yr</span>
+          </div>
+          <input type="range" id="rsip-tenure" min="1" max="40" step="1" value="10" oninput="syncF('rsip-tenure','sip-tenure')" />
+        </div>
+        <div class="field" id="step-up-field">
+          <label>Annual Step-Up (%)</label>
+          <div class="input-wrap">
+            <input type="number" id="sip-stepup" value="0" step="1" min="0" max="50" class="no-prefix" />
+            <span class="suffix">%</span>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">Increase SIP by this % each year (optional)</div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcSIP()">Calculate Returns</button>
+    </div>
+
+    <div class="card hidden" id="sip-results">
+      <div class="maturity-highlight">
+        <div>
+          <div class="mh-label" id="sip-maturity-label">Corpus at Maturity</div>
+          <div class="mh-value" id="sip-corpus">-</div>
+          <div class="mh-sub" id="sip-period-info">-</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mh-label">Total Gains</div>
+          <div class="mh-value" id="sip-gains">-</div>
+          <div class="mh-sub" id="sip-cagr">-</div>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-box primary">
+          <div class="rb-label">Total Invested</div>
+          <div class="rb-value" id="sip-res-invested">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="rb-label">Wealth Gained</div>
+          <div class="rb-value" id="sip-res-gains">-</div>
+        </div>
+        <div class="result-box orange">
+          <div class="rb-label">Returns %</div>
+          <div class="rb-value" id="sip-res-pct">-</div>
+        </div>
+        <div class="result-box">
+          <div class="rb-label">Absolute Return</div>
+          <div class="rb-value" id="sip-res-abs">-</div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="donut-wrap">
+          <canvas id="donut-sip" width="190" height="190"></canvas>
+          <div class="donut-center">
+            <span class="dc-sub">Total</span>
+            <span class="dc-main" id="sip-donut-label">-</span>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#7c3aed"></div>
+            <div>
+              <div class="li-name">Amount Invested</div>
+              <div class="li-val" id="sip-leg-invested">-</div>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#10b981"></div>
+            <div>
+              <div class="li-name">Wealth Gained</div>
+              <div class="li-val" id="sip-leg-gains">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="sip-schedule">
+      <div class="card-header">
+        <div class="card-icon">&#128203;</div>
+        <div><h2>Year-wise Growth</h2></div>
+      </div>
+      <div class="bar-chart" id="sip-bars"></div>
+      <div class="section-divider"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Invested This Year</th>
+              <th>Cumulative Invested</th>
+              <th>Estimated Returns</th>
+              <th>Total Value</th>
+            </tr>
+          </thead>
+          <tbody id="sip-table-body"></tbody>
+          <tfoot id="sip-table-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GOAL PANEL ===== -->
+  <div id="panel-goal" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">&#127919;</div>
+        <div>
+          <h2>Savings Goal Planner</h2>
+          <p>How much to invest to reach your financial goal</p>
+        </div>
+      </div>
+      <div class="info-banner">Enter your target amount and we'll tell you exactly how much to invest each month (SIP) or as a lump sum, and how long it takes.</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Target Amount (Goal)</label>
+          <div class="input-wrap">
+            <span class="prefix">&#8377;</span>
+            <input type="number" id="goal-target" value="1000000" min="10000" oninput="syncR('goal-target','rgoal-target')" />
+          </div>
+          <input type="range" id="rgoal-target" min="50000" max="50000000" step="50000" value="1000000" oninput="syncF('rgoal-target','goal-target')" />
+        </div>
+        <div class="field">
+          <label>Expected Annual Return</label>
+          <div class="input-wrap">
+            <input type="number" id="goal-rate" value="10" step="0.5" min="0.1" max="30" class="no-prefix" oninput="syncR('goal-rate','rgoal-rate')" />
+            <span class="suffix">%</span>
+          </div>
+          <input type="range" id="rgoal-rate" min="1" max="20" step="0.5" value="10" oninput="syncF('rgoal-rate','goal-rate')" />
+        </div>
+        <div class="field">
+          <label>Investment Period (Years)</label>
+          <div class="input-wrap">
+            <input type="number" id="goal-tenure" value="5" min="1" max="40" class="no-prefix" oninput="syncR('goal-tenure','rgoal-tenure')" />
+            <span class="suffix">Yr</span>
+          </div>
+          <input type="range" id="rgoal-tenure" min="1" max="30" step="1" value="5" oninput="syncF('rgoal-tenure','goal-tenure')" />
+        </div>
+        <div class="field">
+          <label>Inflation Rate (optional)</label>
+          <div class="input-wrap">
+            <input type="number" id="goal-inflation" value="6" step="0.5" min="0" max="15" class="no-prefix" />
+            <span class="suffix">%</span>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">Adjusts your goal for inflation</div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcGoal()">Calculate Investment Needed</button>
+    </div>
+
+    <div class="card hidden" id="goal-results">
+      <div class="maturity-highlight">
+        <div>
+          <div class="mh-label">Inflation-Adjusted Goal</div>
+          <div class="mh-value" id="goal-adjusted">-</div>
+          <div class="mh-sub" id="goal-inflation-note">-</div>
+        </div>
+        <div style="text-align:right">
+          <div class="mh-label">Your Original Goal</div>
+          <div class="mh-value" id="goal-original">-</div>
+          <div class="mh-sub" id="goal-period-info">-</div>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-box primary">
+          <div class="rb-label">Monthly SIP Needed</div>
+          <div class="rb-value" id="goal-sip">-</div>
+        </div>
+        <div class="result-box green">
+          <div class="rb-label">Lumpsum Needed</div>
+          <div class="rb-value" id="goal-lumpsum">-</div>
+        </div>
+        <div class="result-box orange">
+          <div class="rb-label">Total via SIP</div>
+          <div class="rb-value" id="goal-total-sip">-</div>
+        </div>
+        <div class="result-box">
+          <div class="rb-label">SIP Returns</div>
+          <div class="rb-value" id="goal-sip-returns">-</div>
+        </div>
+      </div>
+      <div class="tip-box" id="goal-tip">-</div>
+    </div>
+  </div>
+
+  <!-- ===== COMPARE PANEL ===== -->
+  <div id="panel-compare" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">&#9878;</div>
+        <div>
+          <h2>Compare Investment Options</h2>
+          <p>See how ₹1 Lakh grows across different instruments</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Investment Amount</label>
+          <div class="input-wrap">
+            <span class="prefix">&#8377;</span>
+            <input type="number" id="cmp-amount" value="100000" min="1000" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Period (Years)</label>
+          <div class="input-wrap">
+            <input type="number" id="cmp-tenure" value="5" min="1" max="40" class="no-prefix" />
+            <span class="suffix">Yr</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;font-size:0.85rem;font-weight:600;color:var(--muted);margin-bottom:10px">Instrument Rates (customize)</div>
+      <div class="form-grid">
+        <div class="field"><label>FD Rate</label>
+          <div class="input-wrap"><input type="number" id="cmp-fd" value="7.1" step="0.1" class="no-prefix" /><span class="suffix">%</span></div>
+        </div>
+        <div class="field"><label>RD Rate</label>
+          <div class="input-wrap"><input type="number" id="cmp-rd" value="7.0" step="0.1" class="no-prefix" /><span class="suffix">%</span></div>
+        </div>
+        <div class="field"><label>PPF Rate</label>
+          <div class="input-wrap"><input type="number" id="cmp-ppf" value="7.1" step="0.1" class="no-prefix" /><span class="suffix">%</span></div>
+        </div>
+        <div class="field"><label>Mutual Fund CAGR</label>
+          <div class="input-wrap"><input type="number" id="cmp-mf" value="12" step="0.5" class="no-prefix" /><span class="suffix">%</span></div>
+        </div>
+        <div class="field"><label>NSC Rate</label>
+          <div class="input-wrap"><input type="number" id="cmp-nsc" value="7.7" step="0.1" class="no-prefix" /><span class="suffix">%</span></div>
+        </div>
+        <div class="field"><label>Savings Account</label>
+          <div class="input-wrap"><input type="number" id="cmp-sa" value="3.5" step="0.1" class="no-prefix" /><span class="suffix">%</span></div>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcCompare()">Compare All</button>
+    </div>
+
+    <div class="card hidden" id="compare-results">
+      <div class="card-header">
+        <div class="card-icon">&#127942;</div>
+        <div><h2>Comparison Results</h2><p id="compare-subtitle">-</p></div>
+      </div>
+      <div id="compare-bars" class="bar-chart"></div>
+      <div class="section-divider"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Instrument</th>
+              <th>Rate</th>
+              <th>Maturity</th>
+              <th>Gain</th>
+              <th>Return %</th>
+            </tr>
+          </thead>
+          <tbody id="compare-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== HELPERS ======
+  const fmt = v => '₹' + Math.round(v).toLocaleString('en-IN');
+  const fmtShort = v => {
+    if (v >= 10000000) return '₹' + (v / 10000000).toFixed(2) + ' Cr';
+    if (v >= 100000) return '₹' + (v / 100000).toFixed(2) + ' L';
+    return fmt(v);
+  };
+
+  function syncR(fId, rId) { document.getElementById(rId).value = document.getElementById(fId).value; }
+  function syncF(rId, fId) { document.getElementById(fId).value = document.getElementById(rId).value; }
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tabs > .tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // Donut chart
+  function drawDonut(id, val1, val2, color1, color2) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    c.width = 190; c.height = 190;
+    const ctx = c.getContext('2d');
+    const cx = 95, cy = 95, r = 82, inner = 56;
+    const total = val1 + val2;
+    if (total === 0) return;
+    const gap = 0.04;
+    const start = -Math.PI / 2;
+    const a1 = (val1 / total) * 2 * Math.PI;
+
+    ctx.clearRect(0, 0, 190, 190);
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start + gap, start + a1 - gap);
+    ctx.closePath();
+    ctx.fillStyle = color1;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start + a1 + gap, start + 2 * Math.PI - gap);
+    ctx.closePath();
+    ctx.fillStyle = color2;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, 2 * Math.PI);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+  }
+
+  // Bar chart renderer
+  function renderBars(containerId, rows, maxVal) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = '';
+    rows.forEach(r => {
+      const pctInv = (r.invested / maxVal * 100).toFixed(1);
+      const pctTot = (r.total / maxVal * 100).toFixed(1);
+      el.innerHTML += `
+        <div class="bar-row">
+          <div class="bar-label">${r.label}</div>
+          <div style="position:relative;height:36px;display:flex;flex-direction:column;justify-content:space-between">
+            <div class="bar-track" style="height:16px">
+              <div class="bar-fill bar-invested" style="width:${pctInv}%"></div>
+            </div>
+            <div class="bar-track" style="height:16px">
+              <div class="bar-fill bar-returns" style="width:${pctTot}%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="bar-value" style="font-size:0.72rem;color:var(--primary)">${fmtShort(r.invested)}</div>
+            <div class="bar-value" style="font-size:0.72rem;color:var(--secondary)">${fmtShort(r.total)}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // ====== FD CALCULATOR ======
+  let fdUnitVal = 'years';
+  function fdUnitChange() {
+    fdUnitVal = document.querySelector('input[name="fd-unit"]:checked').value;
+    document.getElementById('fd-tenure-unit').textContent = fdUnitVal === 'years' ? 'Yr' : 'Mo';
+    const r = document.getElementById('rfd-tenure');
+    if (fdUnitVal === 'years') { r.max = 10; r.step = 1; }
+    else { r.max = 120; r.step = 1; }
+  }
+
+  function calcFD() {
+    const P = parseFloat(document.getElementById('fd-principal').value);
+    const annualRate = parseFloat(document.getElementById('fd-rate').value);
+    const tenureRaw = parseFloat(document.getElementById('fd-tenure').value);
+    const freqEl = document.getElementById('fd-freq');
+    const freq = parseFloat(freqEl.value);
+
+    const tenureYears = fdUnitVal === 'years' ? tenureRaw : tenureRaw / 12;
+    if (!P || !annualRate || !tenureYears) return alert('Fill all fields.');
+
+    let maturity;
+    if (freq === 0) {
+      // Simple interest
+      maturity = P * (1 + (annualRate / 100) * tenureYears);
+    } else {
+      // Compound interest
+      maturity = P * Math.pow(1 + annualRate / (100 * freq), freq * tenureYears);
+    }
+
+    const interest = maturity - P;
+    const effectiveYield = ((maturity / P - 1) / tenureYears) * 100;
+    const monthlyIncome = interest / (tenureYears * 12);
+    const tax = interest * 0.30;
+    const postTax = maturity - tax;
+
+    // Maturity date
+    const matDate = new Date();
+    matDate.setFullYear(matDate.getFullYear() + Math.floor(tenureYears));
+    const matDateStr = matDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+
+    document.getElementById('fd-maturity').textContent = fmt(maturity);
+    document.getElementById('fd-maturity-date').textContent = 'Matures on: ' + matDateStr;
+    document.getElementById('fd-interest-big').textContent = fmt(interest);
+    document.getElementById('fd-rate-info').textContent = freqEl.options[freqEl.selectedIndex].text + ' compounding';
+    document.getElementById('fd-res-principal').textContent = fmt(P);
+    document.getElementById('fd-res-interest').textContent = fmt(interest);
+    document.getElementById('fd-res-yield').textContent = effectiveYield.toFixed(2) + '%';
+    document.getElementById('fd-res-monthly').textContent = fmt(monthlyIncome);
+    document.getElementById('fd-res-tax').textContent = fmt(tax);
+    document.getElementById('fd-res-posttax').textContent = fmt(postTax);
+    document.getElementById('fd-donut-label').textContent = fmtShort(maturity);
+    document.getElementById('fd-leg-principal').textContent = fmt(P) + ' (' + ((P/maturity)*100).toFixed(1) + '%)';
+    document.getElementById('fd-leg-interest').textContent = fmt(interest) + ' (' + ((interest/maturity)*100).toFixed(1) + '%)';
+
+    document.getElementById('fd-results').classList.remove('hidden');
+    drawDonut('donut-fd', P, interest, '#7c3aed', '#10b981');
+
+    // Build year-wise table
+    buildFDTable(P, annualRate, tenureYears, freq, maturity);
+    document.getElementById('fd-schedule').classList.remove('hidden');
+  }
+
+  function buildFDTable(P, annualRate, tenureYears, freq, maturity) {
+    const tbody = document.getElementById('fd-table-body');
+    const tfoot = document.getElementById('fd-table-foot');
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+
+    const years = Math.ceil(tenureYears);
+    let balance = P, totalInt = 0;
+    const rows = [];
+    for (let y = 1; y <= years; y++) {
+      const t = Math.min(y, tenureYears) - Math.min(y - 1, tenureYears);
+      let closing;
+      if (freq === 0) {
+        closing = balance + P * (annualRate / 100) * t;
+      } else {
+        closing = balance * Math.pow(1 + annualRate / (100 * freq), freq * t);
+      }
+      const intEarned = closing - balance;
+      totalInt += intEarned;
+      rows.push({ year: y, opening: balance, interest: intEarned, closing });
+      balance = closing;
+    }
+
+    const maxVal = rows[rows.length - 1].closing;
+    renderBars('fd-bars', rows.map(r => ({ label: 'Y' + r.year, invested: P, total: r.closing })), maxVal);
+
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>Year ${r.year}</td><td>${fmt(r.opening)}</td><td style="color:var(--secondary);font-weight:700">${fmt(r.interest)}</td><td>${fmt(r.closing)}</td><td>${fmt(r.closing - P)}</td>`;
+      tbody.appendChild(tr);
+    });
+    tfoot.innerHTML = `<tr><td>Total</td><td>${fmt(P)}</td><td>${fmt(totalInt)}</td><td>${fmt(maturity)}</td><td>${fmt(maturity - P)}</td></tr>`;
+  }
+
+  // ====== RD CALCULATOR ======
+  function calcRD() {
+    const monthly = parseFloat(document.getElementById('rd-amount').value);
+    const annualRate = parseFloat(document.getElementById('rd-rate').value);
+    const months = parseInt(document.getElementById('rd-tenure').value);
+    if (!monthly || !annualRate || !months) return alert('Fill all fields.');
+
+    const r = annualRate / 100 / 4; // quarterly rate
+    // RD maturity formula: M = R × [(1+r)^n - 1] / (1-(1+r)^(-1/3))
+    // Simpler: accumulate month by month
+    let balance = 0, totalInvested = 0, totalInterest = 0;
+    const tableRows = [];
+    const quarterRate = annualRate / 100 / 12;
+
+    for (let m = 1; m <= months; m++) {
+      balance += monthly;
+      const intEarned = balance * quarterRate;
+      totalInterest += intEarned;
+      balance += intEarned;
+      totalInvested += monthly;
+      tableRows.push({ month: m, deposit: monthly, invested: totalInvested, interest: intEarned, balance });
+    }
+
+    const maturity = balance;
+    const interest = maturity - totalInvested;
+    const retPct = ((interest / totalInvested) * 100).toFixed(1);
+
+    document.getElementById('rd-maturity').textContent = fmt(maturity);
+    document.getElementById('rd-tenure-info').textContent = `Over ${months} months (${(months/12).toFixed(1)} years)`;
+    document.getElementById('rd-interest-big').textContent = fmt(interest);
+    document.getElementById('rd-return-pct').textContent = `Return: ${retPct}% of invested`;
+    document.getElementById('rd-res-invested').textContent = fmt(totalInvested);
+    document.getElementById('rd-res-interest').textContent = fmt(interest);
+    document.getElementById('rd-res-monthly').textContent = fmt(monthly);
+    document.getElementById('rd-res-wealth').textContent = ((maturity / totalInvested - 1) * 100).toFixed(1) + '%';
+    document.getElementById('rd-donut-label').textContent = fmtShort(maturity);
+    document.getElementById('rd-leg-invested').textContent = fmt(totalInvested) + ' (' + ((totalInvested/maturity)*100).toFixed(1) + '%)';
+    document.getElementById('rd-leg-interest').textContent = fmt(interest) + ' (' + ((interest/maturity)*100).toFixed(1) + '%)';
+
+    document.getElementById('rd-results').classList.remove('hidden');
+    drawDonut('donut-rd', totalInvested, interest, '#7c3aed', '#10b981');
+
+    // Table
+    const tbody = document.getElementById('rd-table-body');
+    const tfoot = document.getElementById('rd-table-foot');
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+    tableRows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>Month ${r.month}</td><td>${fmt(r.deposit)}</td><td>${fmt(r.invested)}</td><td style="color:var(--secondary)">${fmt(r.interest)}</td><td>${fmt(r.balance)}</td>`;
+      tbody.appendChild(tr);
+    });
+    tfoot.innerHTML = `<tr><td>Total</td><td>${fmt(monthly * months)}</td><td>${fmt(totalInvested)}</td><td>${fmt(interest)}</td><td>${fmt(maturity)}</td></tr>`;
+    document.getElementById('rd-schedule').classList.remove('hidden');
+  }
+
+  // ====== SIP CALCULATOR ======
+  let sipMode = 'sip';
+  function setSIPMode(mode) {
+    sipMode = mode;
+    document.getElementById('sip-mode-btn').classList.toggle('active', mode === 'sip');
+    document.getElementById('lump-mode-btn').classList.toggle('active', mode === 'lump');
+    document.getElementById('sip-amount-label').textContent = mode === 'sip' ? 'Monthly SIP Amount' : 'Lumpsum Amount';
+    document.getElementById('step-up-field').style.display = mode === 'sip' ? '' : 'none';
+  }
+
+  function calcSIP() {
+    const amount = parseFloat(document.getElementById('sip-amount').value);
+    const annualRate = parseFloat(document.getElementById('sip-rate').value);
+    const years = parseInt(document.getElementById('sip-tenure').value);
+    const stepUp = parseFloat(document.getElementById('sip-stepup').value) || 0;
+    if (!amount || !annualRate || !years) return alert('Fill all fields.');
+
+    let corpus, totalInvested;
+
+    if (sipMode === 'lump') {
+      corpus = amount * Math.pow(1 + annualRate / 100, years);
+      totalInvested = amount;
+    } else {
+      // SIP with step-up
+      const r = annualRate / 100 / 12;
+      let balance = 0, currentSIP = amount;
+      totalInvested = 0;
+      for (let y = 1; y <= years; y++) {
+        for (let m = 1; m <= 12; m++) {
+          balance = (balance + currentSIP) * (1 + r);
+          totalInvested += currentSIP;
+        }
+        currentSIP *= (1 + stepUp / 100);
+      }
+      corpus = balance;
+    }
+
+    const gains = corpus - totalInvested;
+    const retPct = ((gains / totalInvested) * 100).toFixed(1);
+
+    document.getElementById('sip-corpus').textContent = fmt(corpus);
+    document.getElementById('sip-period-info').textContent = `After ${years} years at ${annualRate}% p.a.`;
+    document.getElementById('sip-gains').textContent = fmt(gains);
+    document.getElementById('sip-cagr').textContent = sipMode === 'lump' ? `CAGR: ${annualRate}%` : `Return: ${retPct}% on invested`;
+    document.getElementById('sip-res-invested').textContent = fmt(totalInvested);
+    document.getElementById('sip-res-gains').textContent = fmt(gains);
+    document.getElementById('sip-res-pct').textContent = retPct + '%';
+    document.getElementById('sip-res-abs').textContent = ((corpus / totalInvested)).toFixed(2) + 'x';
+    document.getElementById('sip-donut-label').textContent = fmtShort(corpus);
+    document.getElementById('sip-leg-invested').textContent = fmt(totalInvested) + ' (' + ((totalInvested/corpus)*100).toFixed(1) + '%)';
+    document.getElementById('sip-leg-gains').textContent = fmt(gains) + ' (' + ((gains/corpus)*100).toFixed(1) + '%)';
+
+    document.getElementById('sip-results').classList.remove('hidden');
+    drawDonut('donut-sip', totalInvested, gains, '#7c3aed', '#10b981');
+
+    // Year-wise table
+    buildSIPTable(amount, annualRate, years, stepUp);
+    document.getElementById('sip-schedule').classList.remove('hidden');
+  }
+
+  function buildSIPTable(amount, annualRate, years, stepUp) {
+    const tbody = document.getElementById('sip-table-body');
+    const tfoot = document.getElementById('sip-table-foot');
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
+
+    const r = annualRate / 100 / 12;
+    let balance = 0, cumInvested = 0, currentSIP = amount;
+    let totalInv = 0, barRows = [];
+
+    for (let y = 1; y <= years; y++) {
+      let yearInvested = 0;
+      const startBalance = balance;
+      for (let m = 1; m <= 12; m++) {
+        if (sipMode === 'lump') {
+          if (y === 1 && m === 1) { balance += amount; cumInvested += amount; yearInvested += amount; }
+        } else {
+          balance = (balance + currentSIP) * (1 + r);
+          cumInvested += currentSIP;
+          yearInvested += currentSIP;
+        }
+        if (sipMode === 'lump') balance *= (1 + annualRate / 100 / 12);
+      }
+      if (sipMode === 'lump' && y === 1) balance = amount * Math.pow(1 + annualRate/100, y);
+      if (sipMode === 'lump' && y > 1) balance = amount * Math.pow(1 + annualRate/100, y);
+      const returns = balance - cumInvested;
+      totalInv = cumInvested;
+      barRows.push({ label: 'Y' + y, invested: cumInvested, total: balance });
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>Year ${y}</td><td>${fmt(yearInvested)}</td><td>${fmt(cumInvested)}</td><td style="color:var(--secondary);font-weight:700">${fmt(returns)}</td><td>${fmt(balance)}</td>`;
+      tbody.appendChild(tr);
+      currentSIP *= (1 + stepUp / 100);
+    }
+
+    tfoot.innerHTML = `<tr><td>Total</td><td>-</td><td>${fmt(totalInv)}</td><td>-</td><td>${fmt(barRows[barRows.length-1].total)}</td></tr>`;
+    renderBars('sip-bars', barRows, barRows[barRows.length-1].total);
+  }
+
+  // ====== GOAL PLANNER ======
+  function calcGoal() {
+    const target = parseFloat(document.getElementById('goal-target').value);
+    const annualRate = parseFloat(document.getElementById('goal-rate').value);
+    const years = parseInt(document.getElementById('goal-tenure').value);
+    const inflation = parseFloat(document.getElementById('goal-inflation').value) || 0;
+    if (!target || !annualRate || !years) return alert('Fill all fields.');
+
+    const adjustedGoal = target * Math.pow(1 + inflation / 100, years);
+
+    // Monthly SIP needed
+    const r = annualRate / 100 / 12;
+    const n = years * 12;
+    const sipNeeded = adjustedGoal * r / (Math.pow(1 + r, n) - 1);
+
+    // Lumpsum needed
+    const lumpsumNeeded = adjustedGoal / Math.pow(1 + annualRate / 100, years);
+
+    const totalViaSIP = sipNeeded * n;
+    const sipReturns = adjustedGoal - totalViaSIP;
+
+    document.getElementById('goal-adjusted').textContent = fmt(adjustedGoal);
+    document.getElementById('goal-inflation-note').textContent = `Adjusted for ${inflation}% inflation over ${years} years`;
+    document.getElementById('goal-original').textContent = fmt(target);
+    document.getElementById('goal-period-info').textContent = `Target in ${years} years at ${annualRate}% return`;
+    document.getElementById('goal-sip').textContent = fmt(sipNeeded);
+    document.getElementById('goal-lumpsum').textContent = fmt(lumpsumNeeded);
+    document.getElementById('goal-total-sip').textContent = fmt(totalViaSIP);
+    document.getElementById('goal-sip-returns').textContent = fmt(sipReturns);
+
+    const tip = sipNeeded < 1000
+      ? `Great news! You only need ₹${Math.round(sipNeeded)}/month. Start a SIP today!`
+      : `Invest ₹${Math.round(sipNeeded).toLocaleString('en-IN')}/month via SIP OR a lump sum of ${fmt(lumpsumNeeded)} to reach your goal of ${fmt(target)}.`;
+    document.getElementById('goal-tip').textContent = '💡 ' + tip;
+
+    document.getElementById('goal-results').classList.remove('hidden');
+  }
+
+  // ====== COMPARE ======
+  function calcCompare() {
+    const amount = parseFloat(document.getElementById('cmp-amount').value);
+    const years = parseFloat(document.getElementById('cmp-tenure').value);
+    if (!amount || !years) return alert('Fill all fields.');
+
+    const instruments = [
+      { name: 'Fixed Deposit', rate: parseFloat(document.getElementById('cmp-fd').value), freq: 4 },
+      { name: 'Recurring Deposit', rate: parseFloat(document.getElementById('cmp-rd').value), freq: 12 },
+      { name: 'PPF', rate: parseFloat(document.getElementById('cmp-ppf').value), freq: 1 },
+      { name: 'Mutual Fund', rate: parseFloat(document.getElementById('cmp-mf').value), freq: 12 },
+      { name: 'NSC', rate: parseFloat(document.getElementById('cmp-nsc').value), freq: 2 },
+      { name: 'Savings A/c', rate: parseFloat(document.getElementById('cmp-sa').value), freq: 4 },
+    ];
+
+    const results = instruments.map(ins => {
+      const maturity = amount * Math.pow(1 + ins.rate / (100 * ins.freq), ins.freq * years);
+      const gain = maturity - amount;
+      const retPct = ((gain / amount) * 100).toFixed(1);
+      return { ...ins, maturity, gain, retPct };
+    }).sort((a, b) => b.maturity - a.maturity);
+
+    const maxVal = results[0].maturity;
+    document.getElementById('compare-subtitle').textContent = `${fmt(amount)} invested for ${years} years`;
+    document.getElementById('compare-results').classList.remove('hidden');
+
+    const colors = ['#7c3aed','#10b981','#f59e0b','#3b82f6','#ef4444','#64748b'];
+    const tbody = document.getElementById('compare-table');
+    tbody.innerHTML = '';
+    results.forEach((r, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${medal} ${r.name}</td>
+        <td style="text-align:right">${r.rate}%</td>
+        <td style="text-align:right;font-weight:700;color:${colors[i]}">${fmt(r.maturity)}</td>
+        <td style="text-align:right;color:var(--secondary);font-weight:700">${fmt(r.gain)}</td>
+        <td style="text-align:right">${r.retPct}%</td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Bars
+    const barsEl = document.getElementById('compare-bars');
+    barsEl.innerHTML = '';
+    results.forEach((r, i) => {
+      const pct = (r.maturity / maxVal * 100).toFixed(1);
+      barsEl.innerHTML += `
+        <div class="bar-row">
+          <div class="bar-label" style="font-size:0.72rem">${r.name.split(' ')[0]}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%;background:${colors[i]};border-radius:4px"></div>
+          </div>
+          <div class="bar-value">${fmtShort(r.maturity)}</div>
+        </div>`;
+    });
+  }
+
+  // Init
+  window.addEventListener('load', () => { calcFD(); });
+</script>
+</body>
+</html>

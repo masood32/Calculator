@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zakat & Fitra Calculator</title>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#c9a84c" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Zakat Calc" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); min-height: 100vh; color: #e0e0e0; padding: 20px; }
+    [lang="ar"], [lang="ur"] { font-family: 'Segoe UI', 'Arial', 'Noto Naskh Arabic', sans-serif; }
+    header { text-align: center; padding: 30px 0 20px; }
+    header h1 { font-size: 2.2rem; color: #c9a84c; letter-spacing: 1px; }
+    header p { color: #aaa; margin-top: 6px; font-size: 0.95rem; }
+    .bismillah { font-size: 1.4rem; color: #c9a84c; margin-bottom: 6px; font-family: serif; }
+
+    /* Language Bar */
+    .lang-bar { display: flex; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .lang-btn { padding: 6px 14px; border: 1.5px solid rgba(201,168,76,0.35); background: transparent; color: #b0b8c1; border-radius: 20px; cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; }
+    .lang-btn.active, .lang-btn:hover { border-color: #c9a84c; background: rgba(201,168,76,0.15); color: #c9a84c; }
+
+    /* Tabs */
+    .tabs { display: flex; justify-content: center; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+    .tab-btn { padding: 12px 36px; border: 2px solid #c9a84c; background: transparent; color: #c9a84c; border-radius: 30px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s; }
+    .tab-btn.active, .tab-btn:hover { background: #c9a84c; color: #0f2027; }
+    .panel { display: none; } .panel.active { display: block; }
+    .container { max-width: 860px; margin: 0 auto; }
+
+    /* Cards */
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 16px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(6px); }
+    .card h2 { color: #c9a84c; font-size: 1.1rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .card h2 .icon { font-size: 1.3rem; }
+
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-2 + .grid-2 { margin-top: 16px; }
+    @media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.85rem; color: #b0b8c1; }
+
+    /* Inputs */
+    .input-wrap { display: flex; align-items: center; background: rgba(255,255,255,0.08); border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; overflow: hidden; transition: border-color 0.2s; }
+    .input-wrap:focus-within { border-color: #c9a84c; }
+    .input-wrap .prefix { padding: 0 12px; background: rgba(201,168,76,0.15); color: #c9a84c; font-weight: 700; font-size: 0.9rem; height: 100%; display: flex; align-items: center; border-right: 1px solid rgba(201,168,76,0.2); white-space: nowrap; }
+    input[type="number"], select { background: transparent; border: none; outline: none; color: #e0e0e0; padding: 11px 14px; font-size: 0.95rem; width: 100%; }
+    input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+    select option { background: #203a43; }
+
+    /* Calculated value pill */
+    .calc-pill { font-size: 0.8rem; color: #c9a84c; padding: 4px 10px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2); border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
+    .calc-pill .pill-label { color: #888; }
+
+    /* RTL */
+    [dir="rtl"] .input-wrap .prefix { border-right: none; border-left: 1px solid rgba(201,168,76,0.2); }
+    [dir="rtl"] .info-icon { margin-left: 0; margin-right: 4px; }
+    [dir="rtl"] .info-icon:hover::after { left: auto; right: 50%; transform: translateX(50%); }
+    [dir="rtl"] .summary-row { flex-direction: row-reverse; }
+
+    /* Nisab toggle */
+    .nisab-toggle { display: flex; gap: 10px; flex-wrap: wrap; }
+    .radio-card { flex: 1; min-width: 120px; padding: 10px 14px; border: 2px solid rgba(201,168,76,0.3); border-radius: 10px; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 0.9rem; }
+    .radio-card input { display: none; }
+    .radio-card.selected { border-color: #c9a84c; background: rgba(201,168,76,0.15); color: #c9a84c; }
+
+    /* Result */
+    .result-box { background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.05)); border: 2px solid #c9a84c; border-radius: 16px; padding: 28px; text-align: center; margin-top: 6px; }
+    .result-box .label { color: #aaa; font-size: 0.9rem; margin-bottom: 8px; }
+    .result-box .amount { font-size: 2.6rem; font-weight: 700; color: #c9a84c; }
+    .result-box .currency { font-size: 1rem; margin-left: 4px; color: #aaa; }
+    .result-box .note { margin-top: 12px; font-size: 0.85rem; color: #aaa; line-height: 1.5; }
+    .status-badge { display: inline-block; padding: 5px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 14px; }
+    .badge-due { background: rgba(76,175,80,0.2); color: #81c784; border: 1px solid #4caf50; }
+    .badge-not-due { background: rgba(255,152,0,0.2); color: #ffb74d; border: 1px solid #ff9800; }
+    .badge-empty { background: rgba(150,150,150,0.2); color: #aaa; border: 1px solid #666; }
+
+    /* Summary rows */
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.9rem; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row .val { color: #c9a84c; font-weight: 600; }
+    .summary-row .val.negative { color: #ef9a9a; }
+
+    /* Buttons */
+    .reset-btn { width: 100%; padding: 11px; background: transparent; color: #aaa; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; cursor: pointer; margin-top: 10px; transition: all 0.2s; }
+    .reset-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+
+    /* Export button */
+    .export-wrap { position: relative; margin-top: 10px; }
+    .export-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, #1a3a4a, #0f2027); color: #c9a84c; font-size: 0.95rem; font-weight: 600; border: 2px solid rgba(201,168,76,0.5); border-radius: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .export-btn:hover { border-color: #c9a84c; background: rgba(201,168,76,0.12); }
+    .export-dropdown { display: none; position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; background: #1a2f3f; border: 1px solid rgba(201,168,76,0.35); border-radius: 12px; overflow: hidden; z-index: 50; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+    .export-dropdown.open { display: block; }
+    .export-option { width: 100%; padding: 13px 18px; background: transparent; color: #e0e0e0; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; text-align: left; }
+    .export-option:hover { background: rgba(201,168,76,0.15); color: #c9a84c; }
+    .export-option + .export-option { border-top: 1px solid rgba(255,255,255,0.07); }
+    .export-spinner { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+    .export-spinner.show { display: flex; }
+    .spinner-ring { width: 44px; height: 44px; border: 4px solid rgba(201,168,76,0.3); border-top-color: #c9a84c; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Fitra */
+    .fitra-rate-box { background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; font-size: 0.88rem; color: #b0b8c1; line-height: 1.6; }
+    .member-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .member-row .member-label { flex: 1; font-size: 0.9rem; color: #b0b8c1; }
+    .counter { display: flex; align-items: center; gap: 8px; }
+    .counter-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #c9a84c; background: transparent; color: #c9a84c; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .counter-btn:hover { background: rgba(201,168,76,0.2); }
+    .counter-num { min-width: 30px; text-align: center; font-size: 1.1rem; font-weight: 700; color: #e0e0e0; }
+
+    /* Tooltip */
+    .info-icon { display: inline-block; width: 16px; height: 16px; background: rgba(201,168,76,0.25); border-radius: 50%; text-align: center; line-height: 16px; font-size: 10px; color: #c9a84c; cursor: help; margin-left: 4px; position: relative; }
+    .info-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); background: #0f2027; border: 1px solid #c9a84c; border-radius: 8px; padding: 8px 12px; width: 220px; font-size: 0.78rem; color: #e0e0e0; z-index: 10; line-height: 1.5; pointer-events: none; }
+    .divider { border: none; border-top: 1px solid rgba(201,168,76,0.2); margin: 18px 0; }
+    footer { text-align: center; padding: 30px 0 10px; color: #555; font-size: 0.8rem; }
+    .disclaimer { background: rgba(255,152,0,0.07); border: 1px solid rgba(255,152,0,0.25); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: #aaa; line-height: 1.5; margin-top: 16px; }
+
+    /* Section divider label */
+    .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(201,168,76,0.6); margin: 18px 0 10px; padding-bottom: 4px; border-bottom: 1px solid rgba(201,168,76,0.15); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="bismillah">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+  <h1 data-i18n="title">Zakat &amp; Fitra Calculator</h1>
+  <p data-i18n="subtitle">Calculate your Islamic obligatory charity with ease</p>
+  <div class="lang-bar">
+    <button class="lang-btn active" data-lang="en" onclick="setLang('en')">🇬🇧 EN</button>
+    <button class="lang-btn" data-lang="hi" onclick="setLang('hi')">🇮🇳 हिं</button>
+    <button class="lang-btn" data-lang="ur" onclick="setLang('ur')">اردو</button>
+    <button class="lang-btn" data-lang="ar" onclick="setLang('ar')">عربي</button>
+    <button class="lang-btn" data-lang="bn" onclick="setLang('bn')">বাং</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" data-i18n="tabZakat" onclick="switchTab('zakat',this)">Zakat Calculator</button>
+    <button class="tab-btn" data-i18n="tabFitra" onclick="switchTab('fitra',this)">Fitra Calculator</button>
+  </div>
+
+  <!-- ═══ ZAKAT PANEL ═══ -->
+  <div id="panel-zakat" class="panel active">
+
+    <!-- Settings -->
+    <div class="card">
+      <h2><span class="icon">⚙️</span> <span data-i18n="settings">Settings</span></h2>
+
+      <!-- Row 1: Currency + Nisab -->
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="currency">Currency</span></label>
+          <div class="input-wrap">
+            <select id="currency" onchange="updateCurrency()">
+              <option value="INR" selected>INR – Indian Rupee</option>
+              <option value="PKR">PKR – Pakistani Rupee</option>
+              <option value="USD">USD – US Dollar</option>
+              <option value="GBP">GBP – British Pound</option>
+              <option value="EUR">EUR – Euro</option>
+              <option value="SAR">SAR – Saudi Riyal</option>
+              <option value="AED">AED – UAE Dirham</option>
+              <option value="CAD">CAD – Canadian Dollar</option>
+              <option value="AUD">AUD – Australian Dollar</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="nisabBasedOn">Nisab Based On</span></label>
+          <div class="nisab-toggle">
+            <label class="radio-card selected" id="lbl-gold">
+              <input type="radio" name="nisab" value="gold" checked onchange="nisabChanged(this)" />
+              <span data-i18n="goldNisab">Gold (87.48g)</span>
+            </label>
+            <label class="radio-card" id="lbl-silver">
+              <input type="radio" name="nisab" value="silver" onchange="nisabChanged(this)" />
+              <span data-i18n="silverNisab">Silver (612.36g)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Gold price + Silver price (always both visible) -->
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="goldPrice">Gold Price per gram</span> <span class="info-icon" data-i18n-tip="goldTip" data-tip="Enter current gold price per gram in your local currency.">i</span></label>
+          <div class="input-wrap">
+            <span class="prefix" id="pfx-gold">₹</span>
+            <input type="number" id="gold-price" value="16331" min="0" oninput="calculateZakat()" placeholder="0" />
+          </div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="silverPrice">Silver Price per gram</span> <span class="info-icon" data-i18n-tip="silverTip" data-tip="Enter current silver price per gram in your local currency.">i</span></label>
+          <div class="input-wrap">
+            <span class="prefix" id="pfx-silver">₹</span>
+            <input type="number" id="silver-price" value="290" min="0" oninput="calculateZakat()" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Nisab threshold (read-only) -->
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="field">
+          <label><span data-i18n="currentNisab">Current Nisab Threshold</span></label>
+          <div class="input-wrap" style="background:rgba(201,168,76,0.05)">
+            <span class="prefix" id="pfx-nisab">₹</span>
+            <input type="number" id="nisab-display" readonly style="color:#c9a84c; cursor:default;" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assets -->
+    <div class="card">
+      <h2><span class="icon">💰</span> <span data-i18n="assets">Your Assets (Wealth)</span></h2>
+
+      <p class="section-label" data-i18n="cashSec">Cash & Bank</p>
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="cash">Cash in Hand</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="cash" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="savings">Bank Savings &amp; Deposits</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="savings" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+      </div>
+
+      <p class="section-label" data-i18n="investSec">Investments</p>
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="investments">Investments &amp; Stocks</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="investments" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="inventory">Business Inventory / Trade Goods</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="inventory" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+      </div>
+
+      <p class="section-label" data-i18n="metalSec">Gold &amp; Silver Weight</p>
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="goldWeight">Gold Weight (grams)</span></label>
+          <div class="input-wrap">
+            <span class="prefix">g</span>
+            <input type="number" id="gold-weight" min="0" value="" oninput="calculateZakat()" placeholder="0" />
+          </div>
+          <span class="calc-pill"><span class="pill-label" data-i18n="calcVal">Value:</span> <span id="gold-val-display">₹ 0.00</span></span>
+        </div>
+        <div class="field">
+          <label><span data-i18n="silverWeight">Silver Weight (grams)</span></label>
+          <div class="input-wrap">
+            <span class="prefix">g</span>
+            <input type="number" id="silver-weight" min="0" value="" oninput="calculateZakat()" placeholder="0" />
+          </div>
+          <span class="calc-pill"><span class="pill-label" data-i18n="calcVal">Value:</span> <span id="silver-val-display">₹ 0.00</span></span>
+        </div>
+      </div>
+
+      <p class="section-label" data-i18n="otherSec">Other Assets</p>
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="receivables">Money Owed To You (Receivables)</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="receivables" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="other">Rental Income / Other Wealth</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="other" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liabilities -->
+    <div class="card">
+      <h2><span class="icon">📉</span> <span data-i18n="liabilities">Your Liabilities (Deductions)</span></h2>
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="debts">Loans &amp; Debts Owed</span> <span class="info-icon" data-i18n-tip="debtsTip" data-tip="Only immediate/short-term debts are deducted.">i</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="debts" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="expenses">Expenses Due (Rent, Bills, etc.)</span></label>
+          <div class="input-wrap"><span class="prefix z-pfx">₹</span><input type="number" id="expenses" min="0" value="" oninput="calculateZakat()" placeholder="0" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card">
+      <h2><span class="icon">📊</span> <span data-i18n="summary">Summary &amp; Result</span></h2>
+      <div class="summary-row"><span data-i18n="totalAssets">Total Assets</span><span class="val" id="s-assets">₹ 0.00</span></div>
+      <div class="summary-row"><span data-i18n="totalLiabilities">Total Liabilities</span><span class="val negative" id="s-liabilities">− ₹ 0.00</span></div>
+      <div class="summary-row"><span data-i18n="netWealth">Net Zakatable Wealth</span><span class="val" id="s-net">₹ 0.00</span></div>
+      <div class="summary-row"><span data-i18n="nisabThreshold">Nisab Threshold</span><span class="val" id="s-nisab">₹ 0.00</span></div>
+      <hr class="divider" />
+      <div class="result-box">
+        <div class="label" data-i18n="zakatDueLabel">Your Zakat Due (2.5%)</div>
+        <div class="amount"><span id="zakat-amount">0.00</span><span class="currency" id="z-currency"> ₹</span></div>
+        <span class="status-badge badge-empty" id="zakat-status">Enter your details above</span>
+        <div class="note" id="zakat-note">Zakat is due when your net wealth exceeds the Nisab and has been held for one lunar year (Hawl).</div>
+      </div>
+      <button class="reset-btn" data-i18n="resetAll" onclick="resetZakat()">Reset All Fields</button>
+
+      <!-- Export -->
+      <div class="export-wrap" id="z-export-wrap">
+        <button class="export-btn" onclick="toggleExport('z-export-drop')">
+          <span>⬇</span> <span data-i18n="exportBtn">Export Report</span>
+        </button>
+        <div class="export-dropdown" id="z-export-drop">
+          <button class="export-option" onclick="doExport('image','zakat')">🖼 <span data-i18n="exportImage">Save as Image (PNG)</span></button>
+          <button class="export-option" onclick="doExport('pdf','zakat')">📄 <span data-i18n="exportPDF">Save as PDF</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer" id="z-disclaimer">
+      <strong>Note:</strong> This calculator is a guide only. Zakat rules may vary by school of thought. Personal &amp; household items, primary residence, and tools of trade are generally exempt. Consult a qualified scholar for your specific situation.
+    </div>
+  </div>
+
+  <!-- ═══ FITRA PANEL ═══ -->
+  <div id="panel-fitra" class="panel">
+    <div class="card">
+      <h2><span class="icon">🌙</span> <span data-i18n="fitraTitle">Zakat al-Fitr (Fitra)</span></h2>
+      <div class="fitra-rate-box" id="about-fitra-box">
+        <strong style="color:#c9a84c">About Fitra:</strong> Zakat al-Fitr is a compulsory charity paid by the head of household on behalf of themselves and every dependent, before the Eid al-Fitr prayer. It is equivalent to about <strong>2 kg</strong> of staple food (wheat, barley, dates, rice) per person.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">⚙️</span> <span data-i18n="settings">Settings</span></h2>
+      <div class="grid-2">
+        <div class="field">
+          <label><span data-i18n="currency">Currency</span></label>
+          <div class="input-wrap">
+            <select id="f-currency" onchange="updateFitraCurrency()">
+              <option value="INR" selected>INR – Indian Rupee</option>
+              <option value="PKR">PKR – Pakistani Rupee</option>
+              <option value="USD">USD – US Dollar</option>
+              <option value="GBP">GBP – British Pound</option>
+              <option value="EUR">EUR – Euro</option>
+              <option value="SAR">SAR – Saudi Riyal</option>
+              <option value="AED">AED – UAE Dirham</option>
+              <option value="CAD">CAD – Canadian Dollar</option>
+              <option value="AUD">AUD – Australian Dollar</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label><span data-i18n="fitraRate">Fitra Rate Per Person</span> <span class="info-icon" data-i18n-tip="fitraTip" data-tip="Set by local scholars/masjid each year. Default shown is an estimate.">i</span></label>
+          <div class="input-wrap">
+            <span class="prefix" id="f-pfx">₹</span>
+            <input type="number" id="fitra-rate" value="100" min="0" oninput="calculateFitra()" placeholder="Amount per person" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">👨‍👩‍👧‍👦</span> <span data-i18n="household">Household Members</span></h2>
+      <div class="member-row">
+        <span class="member-label" data-i18n="adults">Adults</span>
+        <div class="counter">
+          <button class="counter-btn" onclick="changeCount('adults',-1)">−</button>
+          <span class="counter-num" id="adults-count">1</span>
+          <button class="counter-btn" onclick="changeCount('adults',1)">+</button>
+        </div>
+      </div>
+      <div class="member-row">
+        <span class="member-label"><span data-i18n="children">Children</span> <span class="info-icon" data-i18n-tip="childrenTip" data-tip="Minors are included; the head of household pays on their behalf.">i</span></span>
+        <div class="counter">
+          <button class="counter-btn" onclick="changeCount('children',-1)">−</button>
+          <span class="counter-num" id="children-count">0</span>
+          <button class="counter-btn" onclick="changeCount('children',1)">+</button>
+        </div>
+      </div>
+      <div class="member-row">
+        <span class="member-label" data-i18n="elderly">Elderly / Dependents</span>
+        <div class="counter">
+          <button class="counter-btn" onclick="changeCount('elderly',-1)">−</button>
+          <span class="counter-num" id="elderly-count">0</span>
+          <button class="counter-btn" onclick="changeCount('elderly',1)">+</button>
+        </div>
+      </div>
+      <hr class="divider" />
+      <div class="summary-row"><span data-i18n="totalHousehold">Total Household Members</span><span class="val" id="total-members">1</span></div>
+      <div class="summary-row"><span data-i18n="fitraRatePerPerson">Fitra Rate Per Person</span><span class="val" id="f-rate-display">₹ 100.00</span></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">📊</span> <span data-i18n="totalFitraPayable">Total Fitra Payable</span></h2>
+      <div class="result-box">
+        <div class="label" data-i18n="totalFitraDue">Total Fitra Due</div>
+        <div class="amount"><span id="fitra-amount">100.00</span><span class="currency" id="fitra-currency-label"> ₹</span></div>
+        <div style="margin-top:10px; color:#aaa; font-size:0.88rem;" id="fitra-breakdown">1 person × ₹ 100.00 = ₹ 100.00</div>
+        <div class="note" id="fitra-note" style="margin-top:14px">
+          Must be paid <strong style="color:#c9a84c">before the Eid al-Fitr prayer.</strong><br/>
+          Can also be paid as food: approx. 2 kg of staple food per person.
+        </div>
+      </div>
+      <button class="reset-btn" data-i18n="reset" onclick="resetFitra()">Reset</button>
+
+      <!-- Export -->
+      <div class="export-wrap" id="f-export-wrap">
+        <button class="export-btn" onclick="toggleExport('f-export-drop')">
+          <span>⬇</span> <span data-i18n="exportBtn">Export Report</span>
+        </button>
+        <div class="export-dropdown" id="f-export-drop">
+          <button class="export-option" onclick="doExport('image','fitra')">🖼 <span data-i18n="exportImage">Save as Image (PNG)</span></button>
+          <button class="export-option" onclick="doExport('pdf','fitra')">📄 <span data-i18n="exportPDF">Save as PDF</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer" id="f-disclaimer">
+      <strong>Note:</strong> Fitra rates are announced each year by local Islamic authorities. The rate shown is an estimate — please confirm the current rate with your local masjid or Islamic body.
+    </div>
+  </div>
+</div>
+
+<footer><span id="footer-text">Made with care &nbsp;|&nbsp; Always verify with a qualified Islamic scholar</span></footer>
+
+<!-- Export loading overlay -->
+<div class="export-spinner" id="export-spinner">
+  <div class="spinner-ring"></div>
+  <p style="color:#c9a84c; font-size:0.9rem;" data-i18n="exportLoading" id="spinner-text">Generating export…</p>
+</div>
+
+<!-- Hidden export render target -->
+<div id="export-render" style="position:fixed; left:-9999px; top:0; pointer-events:none;"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ─── Translations ─────────────────────────────────────────────────────────────
+const translations = {
+  en: {
+    title:'Zakat & Fitra Calculator', subtitle:'Calculate your Islamic obligatory charity with ease',
+    tabZakat:'Zakat Calculator', tabFitra:'Fitra Calculator',
+    settings:'Settings', currency:'Currency', nisabBasedOn:'Nisab Based On',
+    goldNisab:'Gold (87.48g)', silverNisab:'Silver (612.36g)',
+    goldPrice:'Gold Price per gram', silverPrice:'Silver Price per gram',
+    goldTip:'Enter current gold price per gram in your local currency.',
+    silverTip:'Enter current silver price per gram in your local currency.',
+    currentNisab:'Current Nisab Threshold',
+    assets:'Your Assets (Wealth)',
+    cashSec:'Cash & Bank', investSec:'Investments',
+    metalSec:'Gold & Silver Weight', otherSec:'Other Assets',
+    cash:'Cash in Hand', savings:'Bank Savings & Deposits',
+    investments:'Investments & Stocks', inventory:'Business Inventory / Trade Goods',
+    goldWeight:'Gold Weight (grams)', silverWeight:'Silver Weight (grams)',
+    calcVal:'Value:', receivables:'Money Owed To You (Receivables)',
+    other:'Rental Income / Other Wealth',
+    liabilities:'Your Liabilities (Deductions)', debts:'Loans & Debts Owed',
+    debtsTip:'Only immediate/short-term debts are deducted.',
+    expenses:'Expenses Due (Rent, Bills, etc.)', summary:'Summary & Result',
+    totalAssets:'Total Assets', totalLiabilities:'Total Liabilities',
+    netWealth:'Net Zakatable Wealth', nisabThreshold:'Nisab Threshold',
+    zakatDueLabel:'Your Zakat Due (2.5%)', resetAll:'Reset All Fields',
+    enterDetails:'Enter your details above',
+    zakatNote:'Zakat is due when your net wealth exceeds the Nisab and has been held for one lunar year (Hawl).',
+    zakatIsDue:'✓ Zakat is Due', zakatNotDue:'✗ Zakat Not Yet Due',
+    zakatDueNote:(n,s)=>`Your net wealth (${n}) exceeds the Nisab (${s}). 2.5% Zakat is obligatory if held for one full lunar year.`,
+    zakatNotDueNote:(n,s)=>`Your net wealth (${n}) is below the Nisab (${s}). Zakat is not obligatory at this time.`,
+    zDisc:'<strong>Note:</strong> This calculator is a guide only. Zakat rules may vary by school of thought. Personal & household items, primary residence, and tools of trade are generally exempt. Consult a qualified scholar for your specific situation.',
+    fitraTitle:'Zakat al-Fitr (Fitra)',
+    aboutFitraBox:'<strong style="color:#c9a84c">About Fitra:</strong> Zakat al-Fitr is a compulsory charity paid by the head of household on behalf of themselves and every dependent, before the Eid al-Fitr prayer. It is equivalent to about <strong>2 kg</strong> of staple food (wheat, barley, dates, rice) per person.',
+    fitraRate:'Fitra Rate Per Person', fitraTip:'Set by local scholars/masjid each year. Default shown is an estimate.',
+    household:'Household Members', adults:'Adults', children:'Children',
+    childrenTip:'Minors are included; the head of household pays on their behalf.',
+    elderly:'Elderly / Dependents', totalHousehold:'Total Household Members',
+    fitraRatePerPerson:'Fitra Rate Per Person', totalFitraPayable:'Total Fitra Payable',
+    totalFitraDue:'Total Fitra Due',
+    fitraNoteHtml:'Must be paid <strong style="color:#c9a84c">before the Eid al-Fitr prayer.</strong><br/>Can also be paid as food: approx. 2 kg of staple food per person.',
+    reset:'Reset',
+    fDisc:'<strong>Note:</strong> Fitra rates are announced each year by local Islamic authorities. The rate shown is an estimate — please confirm the current rate with your local masjid or Islamic body.',
+    exportBtn:'Export Report', exportImage:'Save as Image (PNG)', exportPDF:'Save as PDF', exportLoading:'Generating export…',
+    person:'person', persons:'persons',
+    footer:'Made with care &nbsp;|&nbsp; Always verify with a qualified Islamic scholar',
+    expGoldSilver:'Gold & Silver',
+    expSettings:'Settings', expAssets:'Assets', expLiabilities:'Liabilities', expResult:'Zakat Result',
+    expFitraResult:'Fitra Result', expDate:'Generated',
+    expNisabBasis:'Nisab Basis', expGoldPriceG:'Gold Price/gram', expSilverPriceG:'Silver Price/gram',
+    expNisabThreshold:'Nisab Threshold', expGoldWeightG:'Gold Weight', expSilverWeightG:'Silver Weight',
+    expTotalAssets:'Total Assets', expTotalLiab:'Total Liabilities', expNetWealth:'Net Zakatable Wealth',
+    expZakatDue:'Zakat Due (2.5%)', expStatus:'Status',
+    expFitraCurrency:'Currency', expFitraRate:'Rate per person', expFitraMembers:'Total Members',
+    expFitraTotal:'Total Fitra Due', expDisclaimer:'Always verify with a qualified Islamic scholar',
+  },
+  hi: {
+    title:'ज़कात और फ़ित्रा कैलकुलेटर', subtitle:'इस्लामी अनिवार्य दान आसानी से गणना करें',
+    tabZakat:'ज़कात कैलकुलेटर', tabFitra:'फ़ित्रा कैलकुलेटर',
+    settings:'सेटिंग्स', currency:'मुद्रा', nisabBasedOn:'निसाब आधारित',
+    goldNisab:'सोना (87.48 ग्राम)', silverNisab:'चाँदी (612.36 ग्राम)',
+    goldPrice:'सोने का भाव प्रति ग्राम', silverPrice:'चाँदी का भाव प्रति ग्राम',
+    goldTip:'अपनी स्थानीय मुद्रा में प्रति ग्राम सोने का वर्तमान भाव दर्ज करें।',
+    silverTip:'अपनी स्थानीय मुद्रा में प्रति ग्राम चाँदी का वर्तमान भाव दर्ज करें।',
+    currentNisab:'वर्तमान निसाब सीमा',
+    assets:'आपकी संपत्ति (धन)',
+    cashSec:'नकद और बैंक', investSec:'निवेश', metalSec:'सोने और चाँदी का वज़न', otherSec:'अन्य संपत्ति',
+    cash:'नकद राशि', savings:'बैंक बचत और जमा', investments:'निवेश और शेयर', inventory:'व्यापारिक माल',
+    goldWeight:'सोने का वज़न (ग्राम)', silverWeight:'चाँदी का वज़न (ग्राम)',
+    calcVal:'मूल्य:', receivables:'आपको देय राशि', other:'किराया आय / अन्य संपत्ति',
+    liabilities:'आपकी देनदारियाँ (कटौतियाँ)', debts:'ऋण और कर्ज़',
+    debtsTip:'केवल तत्काल/अल्पकालिक ऋण घटाए जाते हैं।',
+    expenses:'बकाया खर्च (किराया, बिल आदि)', summary:'सारांश और परिणाम',
+    totalAssets:'कुल संपत्ति', totalLiabilities:'कुल देनदारियाँ',
+    netWealth:'शुद्ध ज़कात योग्य संपत्ति', nisabThreshold:'निसाब सीमा',
+    zakatDueLabel:'आपकी देय ज़कात (2.5%)', resetAll:'सभी फ़ील्ड रीसेट करें',
+    enterDetails:'ऊपर अपनी जानकारी दर्ज करें',
+    zakatNote:'ज़कात तब देय होती है जब शुद्ध संपत्ति निसाब से अधिक हो और एक चंद्र वर्ष (हौल) रखी गई हो।',
+    zakatIsDue:'✓ ज़कात देय है', zakatNotDue:'✗ ज़कात अभी देय नहीं',
+    zakatDueNote:(n,s)=>`आपकी शुद्ध संपत्ति (${n}) निसाब (${s}) से अधिक है। 2.5% ज़कात अनिवार्य है।`,
+    zakatNotDueNote:(n,s)=>`आपकी शुद्ध संपत्ति (${n}) निसाब (${s}) से कम है। इस समय ज़कात अनिवार्य नहीं।`,
+    zDisc:'<strong>नोट:</strong> यह कैलकुलेटर केवल मार्गदर्शन के लिए है। किसी योग्य विद्वान से परामर्श करें।',
+    fitraTitle:'ज़कात अल-फ़ित्र (फ़ित्रा)',
+    aboutFitraBox:'<strong style="color:#c9a84c">फ़ित्रा के बारे में:</strong> ज़कात अल-फ़ित्र एक अनिवार्य दान है जो ईद अल-फ़ित्र की नमाज़ से पहले दिया जाता है। यह प्रति व्यक्ति लगभग <strong>2 किलो</strong> मुख्य खाद्य (गेहूं, जौ, खजूर, चावल) के बराबर है।',
+    fitraRate:'प्रति व्यक्ति फ़ित्रा दर', fitraTip:'प्रत्येक वर्ष स्थानीय विद्वानों/मस्जिद द्वारा निर्धारित।',
+    household:'घर के सदस्य', adults:'वयस्क', children:'बच्चे',
+    childrenTip:'नाबालिग शामिल हैं; घर का मुखिया उनकी ओर से भुगतान करता है।',
+    elderly:'बुजुर्ग / आश्रित', totalHousehold:'कुल घर के सदस्य',
+    fitraRatePerPerson:'प्रति व्यक्ति फ़ित्रा दर', totalFitraPayable:'कुल देय फ़ित्रा', totalFitraDue:'कुल देय फ़ित्रा',
+    fitraNoteHtml:'ईद अल-फ़ित्र की नमाज़ से <strong style="color:#c9a84c">पहले देना अनिवार्य है।</strong><br/>भोजन के रूप में भी दिया जा सकता है।',
+    reset:'रीसेट',
+    fDisc:'<strong>नोट:</strong> फ़ित्रा दरें प्रत्येक वर्ष स्थानीय इस्लामी अधिकारियों द्वारा घोषित की जाती हैं।',
+    exportBtn:'रिपोर्ट निर्यात करें', exportImage:'छवि के रूप में सहेजें (PNG)', exportPDF:'PDF के रूप में सहेजें', exportLoading:'निर्यात हो रहा है…',
+    person:'व्यक्ति', persons:'व्यक्ति',
+    footer:'देखभाल के साथ बनाया गया &nbsp;|&nbsp; हमेशा किसी योग्य इस्लामी विद्वान से सत्यापित करें',
+    expGoldSilver:'सोना और चाँदी', expSettings:'सेटिंग्स', expAssets:'संपत्ति', expLiabilities:'देनदारियाँ', expResult:'ज़कात परिणाम',
+    expFitraResult:'फ़ित्रा परिणाम', expDate:'तिथि',
+    expNisabBasis:'निसाब आधार', expGoldPriceG:'सोना/ग्राम', expSilverPriceG:'चाँदी/ग्राम',
+    expNisabThreshold:'निसाब सीमा', expGoldWeightG:'सोने का वज़न', expSilverWeightG:'चाँदी का वज़न',
+    expTotalAssets:'कुल संपत्ति', expTotalLiab:'कुल देनदारियाँ', expNetWealth:'शुद्ध संपत्ति',
+    expZakatDue:'देय ज़कात (2.5%)', expStatus:'स्थिति',
+    expFitraCurrency:'मुद्रा', expFitraRate:'प्रति व्यक्ति दर', expFitraMembers:'कुल सदस्य',
+    expFitraTotal:'कुल फ़ित्रा', expDisclaimer:'सदा किसी योग्य इस्लामी विद्वान से सत्यापित करें',
+  },
+  ur: {
+    rtl:true,
+    title:'زکوٰۃ اور فطرہ کیلکولیٹر', subtitle:'اسلامی واجب الادا صدقہ آسانی سے حساب کریں',
+    tabZakat:'زکوٰۃ کیلکولیٹر', tabFitra:'فطرہ کیلکولیٹر',
+    settings:'ترتیبات', currency:'کرنسی', nisabBasedOn:'نصاب کی بنیاد',
+    goldNisab:'سونا (87.48 گرام)', silverNisab:'چاندی (612.36 گرام)',
+    goldPrice:'سونے کی قیمت فی گرام', silverPrice:'چاندی کی قیمت فی گرام',
+    goldTip:'مقامی کرنسی میں فی گرام سونے کی موجودہ قیمت درج کریں۔',
+    silverTip:'مقامی کرنسی میں فی گرام چاندی کی موجودہ قیمت درج کریں۔',
+    currentNisab:'موجودہ نصاب حد',
+    assets:'آپ کی دولت',
+    cashSec:'نقد اور بینک', investSec:'سرمایہ کاری', metalSec:'سونے اور چاندی کا وزن', otherSec:'دیگر دولت',
+    cash:'نقد رقم', savings:'بینک بچت و ذخائر', investments:'سرمایہ کاری و حصص', inventory:'تجارتی مال',
+    goldWeight:'سونے کا وزن (گرام)', silverWeight:'چاندی کا وزن (گرام)',
+    calcVal:'قدر:', receivables:'واجب الوصول رقم', other:'کرائے کی آمدن / دیگر دولت',
+    liabilities:'آپ کی ذمہ داریاں (کٹوتیاں)', debts:'قرض اور واجبات',
+    debtsTip:'صرف فوری/قلیل مدتی قرضے کاٹے جاتے ہیں۔',
+    expenses:'واجب الادا اخراجات (کرایہ، بل وغیرہ)', summary:'خلاصہ اور نتیجہ',
+    totalAssets:'کل دولت', totalLiabilities:'کل ذمہ داریاں',
+    netWealth:'خالص قابل زکوٰۃ دولت', nisabThreshold:'نصاب حد',
+    zakatDueLabel:'آپ کی واجب زکوٰۃ (2.5%)', resetAll:'تمام خانے خالی کریں',
+    enterDetails:'اوپر اپنی تفصیل درج کریں',
+    zakatNote:'زکوٰۃ اس وقت واجب ہوتی ہے جب خالص دولت نصاب سے زیادہ ہو اور ایک قمری سال (حول) گزر جائے۔',
+    zakatIsDue:'✓ زکوٰۃ واجب ہے', zakatNotDue:'✗ زکوٰۃ ابھی واجب نہیں',
+    zakatDueNote:(n,s)=>`آپ کی خالص دولت (${n}) نصاب (${s}) سے زیادہ ہے۔ 2.5% زکوٰۃ واجب ہے۔`,
+    zakatNotDueNote:(n,s)=>`آپ کی خالص دولت (${n}) نصاب (${s}) سے کم ہے۔ زکوٰۃ واجب نہیں۔`,
+    zDisc:'<strong>نوٹ:</strong> یہ کیلکولیٹر صرف رہنمائی کے لیے ہے۔ کسی اہل عالم سے مشورہ کریں۔',
+    fitraTitle:'زکوٰۃ الفطر (فطرہ)',
+    aboutFitraBox:'<strong style="color:#c9a84c">فطرہ کے بارے میں:</strong> زکوٰۃ الفطر ایک واجب صدقہ ہے جو عید الفطر کی نماز سے پہلے ادا کیا جاتا ہے۔ یہ فی کس تقریباً <strong>2 کلو</strong> بنیادی غذا کے برابر ہے۔',
+    fitraRate:'فی کس فطرہ کی شرح', fitraTip:'ہر سال مقامی علماء/مسجد کی طرف سے مقرر کردہ۔',
+    household:'گھر کے افراد', adults:'بالغ', children:'بچے',
+    childrenTip:'نابالغ شامل ہیں؛ گھر کا سربراہ ادا کرتا ہے۔',
+    elderly:'بزرگ / زیر کفالت', totalHousehold:'گھر کے کل افراد',
+    fitraRatePerPerson:'فی کس فطرہ کی شرح', totalFitraPayable:'کل واجب الادا فطرہ', totalFitraDue:'کل واجب فطرہ',
+    fitraNoteHtml:'عید الفطر کی نماز سے <strong style="color:#c9a84c">پہلے ادا کریں۔</strong><br/>غذا کی صورت میں بھی دیا جا سکتا ہے۔',
+    reset:'دوبارہ ترتیب دیں',
+    fDisc:'<strong>نوٹ:</strong> فطرہ کی شرحیں ہر سال مقامی اسلامی اداروں کی طرف سے اعلان کی جاتی ہیں۔',
+    exportBtn:'رپورٹ برآمد کریں', exportImage:'تصویر کے طور پر محفوظ کریں (PNG)', exportPDF:'PDF کے طور پر محفوظ کریں', exportLoading:'برآمد ہو رہا ہے…',
+    person:'شخص', persons:'افراد',
+    footer:'محبت سے بنایا گیا &nbsp;|&nbsp; ہمیشہ کسی اہل عالم سے تصدیق کریں',
+    expGoldSilver:'سونا اور چاندی', expSettings:'ترتیبات', expAssets:'دولت', expLiabilities:'ذمہ داریاں', expResult:'زکوٰۃ نتیجہ',
+    expFitraResult:'فطرہ نتیجہ', expDate:'تاریخ',
+    expNisabBasis:'نصاب بنیاد', expGoldPriceG:'سونا/گرام', expSilverPriceG:'چاندی/گرام',
+    expNisabThreshold:'نصاب حد', expGoldWeightG:'سونے کا وزن', expSilverWeightG:'چاندی کا وزن',
+    expTotalAssets:'کل دولت', expTotalLiab:'کل ذمہ داریاں', expNetWealth:'خالص دولت',
+    expZakatDue:'واجب زکوٰۃ (2.5%)', expStatus:'صورتحال',
+    expFitraCurrency:'کرنسی', expFitraRate:'فی کس شرح', expFitraMembers:'کل افراد',
+    expFitraTotal:'کل فطرہ', expDisclaimer:'ہمیشہ کسی اہل عالم سے تصدیق کریں',
+  },
+  ar: {
+    rtl:true,
+    title:'حاسبة الزكاة وزكاة الفطر', subtitle:'احسب زكاتك الإسلامية بسهولة',
+    tabZakat:'حاسبة الزكاة', tabFitra:'حاسبة الفطر',
+    settings:'الإعدادات', currency:'العملة', nisabBasedOn:'النصاب على أساس',
+    goldNisab:'الذهب (87.48 جم)', silverNisab:'الفضة (612.36 جم)',
+    goldPrice:'سعر الذهب للجرام', silverPrice:'سعر الفضة للجرام',
+    goldTip:'أدخل سعر الذهب الحالي للجرام بعملتك المحلية.',
+    silverTip:'أدخل سعر الفضة الحالي للجرام بعملتك المحلية.',
+    currentNisab:'حد النصاب الحالي',
+    assets:'أصولك (الثروة)',
+    cashSec:'النقد والبنك', investSec:'الاستثمارات', metalSec:'وزن الذهب والفضة', otherSec:'أصول أخرى',
+    cash:'النقد في اليد', savings:'المدخرات والودائع البنكية', investments:'الاستثمارات والأسهم', inventory:'بضاعة التجارة',
+    goldWeight:'وزن الذهب (جرام)', silverWeight:'وزن الفضة (جرام)',
+    calcVal:'القيمة:', receivables:'الديون المستحقة لك', other:'دخل الإيجار / ثروات أخرى',
+    liabilities:'التزاماتك (الخصومات)', debts:'القروض والديون',
+    debtsTip:'تُخصم الديون الفورية/قصيرة الأجل فقط.',
+    expenses:'المصروفات المستحقة', summary:'الملخص والنتيجة',
+    totalAssets:'إجمالي الأصول', totalLiabilities:'إجمالي الالتزامات',
+    netWealth:'صافي الثروة الزكوية', nisabThreshold:'حد النصاب',
+    zakatDueLabel:'زكاتك الواجبة (2.5%)', resetAll:'إعادة تعيين الكل',
+    enterDetails:'أدخل تفاصيلك أعلاه',
+    zakatNote:'تجب الزكاة عندما تتجاوز ثروتك الصافية النصاب وتحول عليها الحول.',
+    zakatIsDue:'✓ الزكاة واجبة', zakatNotDue:'✗ الزكاة غير واجبة بعد',
+    zakatDueNote:(n,s)=>`ثروتك الصافية (${n}) تتجاوز النصاب (${s}). زكاة 2.5% واجبة.`,
+    zakatNotDueNote:(n,s)=>`ثروتك الصافية (${n}) دون النصاب (${s}). الزكاة غير واجبة حالياً.`,
+    zDisc:'<strong>ملاحظة:</strong> هذه الحاسبة للاسترشاد فقط. استشر عالماً مؤهلاً.',
+    fitraTitle:'زكاة الفطر',
+    aboutFitraBox:'<strong style="color:#c9a84c">عن زكاة الفطر:</strong> زكاة الفطر صدقة واجبة قبل صلاة عيد الفطر. وتعادل نحو <strong>2 كجم</strong> من القوت الأساسي عن كل شخص.',
+    fitraRate:'معدل الفطر للفرد', fitraTip:'يُحدد سنوياً من قِبل العلماء المحليين/المسجد.',
+    household:'أفراد الأسرة', adults:'البالغون', children:'الأطفال',
+    childrenTip:'يُشمل القاصرون؛ يؤدي عنهم رب البيت.',
+    elderly:'المسنون / المعالون', totalHousehold:'إجمالي أفراد الأسرة',
+    fitraRatePerPerson:'معدل الفطر للفرد', totalFitraPayable:'إجمالي الفطر المستحق', totalFitraDue:'إجمالي الفطر الواجب',
+    fitraNoteHtml:'يجب الأداء <strong style="color:#c9a84c">قبل صلاة عيد الفطر.</strong><br/>يمكن الأداء طعاماً: نحو 2 كجم للشخص.',
+    reset:'إعادة تعيين',
+    fDisc:'<strong>ملاحظة:</strong> تُعلن معدلات الفطر سنوياً من قِبل الجهات الإسلامية المحلية.',
+    exportBtn:'تصدير التقرير', exportImage:'حفظ كصورة (PNG)', exportPDF:'حفظ كـ PDF', exportLoading:'جارٍ التصدير…',
+    person:'شخص', persons:'أشخاص',
+    footer:'صُنع بعناية &nbsp;|&nbsp; تحقق دائماً مع عالم إسلامي مؤهل',
+    expGoldSilver:'الذهب والفضة', expSettings:'الإعدادات', expAssets:'الأصول', expLiabilities:'الالتزامات', expResult:'نتيجة الزكاة',
+    expFitraResult:'نتيجة الفطر', expDate:'التاريخ',
+    expNisabBasis:'أساس النصاب', expGoldPriceG:'ذهب/جم', expSilverPriceG:'فضة/جم',
+    expNisabThreshold:'حد النصاب', expGoldWeightG:'وزن الذهب', expSilverWeightG:'وزن الفضة',
+    expTotalAssets:'إجمالي الأصول', expTotalLiab:'إجمالي الالتزامات', expNetWealth:'صافي الثروة',
+    expZakatDue:'الزكاة الواجبة (2.5%)', expStatus:'الحالة',
+    expFitraCurrency:'العملة', expFitraRate:'المعدل للفرد', expFitraMembers:'إجمالي الأفراد',
+    expFitraTotal:'إجمالي الفطر', expDisclaimer:'تحقق دائماً مع عالم إسلامي مؤهل',
+  },
+  bn: {
+    title:'যাকাত ও ফিতরা ক্যালকুলেটর', subtitle:'সহজে ইসলামিক বাধ্যতামূলক দান গণনা করুন',
+    tabZakat:'যাকাত ক্যালকুলেটর', tabFitra:'ফিতরা ক্যালকুলেটর',
+    settings:'সেটিংস', currency:'মুদ্রা', nisabBasedOn:'নিসাব ভিত্তিক',
+    goldNisab:'সোনা (87.48 গ্রাম)', silverNisab:'রূপা (612.36 গ্রাম)',
+    goldPrice:'প্রতি গ্রাম সোনার মূল্য', silverPrice:'প্রতি গ্রাম রূপার মূল্য',
+    goldTip:'স্থানীয় মুদ্রায় প্রতি গ্রাম সোনার বর্তমান মূল্য দিন।',
+    silverTip:'স্থানীয় মুদ্রায় প্রতি গ্রাম রূপার বর্তমান মূল্য দিন।',
+    currentNisab:'বর্তমান নিসাব সীমা',
+    assets:'আপনার সম্পদ (ধন)',
+    cashSec:'নগদ ও ব্যাংক', investSec:'বিনিয়োগ', metalSec:'সোনা ও রূপার ওজন', otherSec:'অন্যান্য সম্পদ',
+    cash:'হাতে নগদ', savings:'ব্যাংক সঞ্চয় ও আমানত', investments:'বিনিয়োগ ও শেয়ার', inventory:'ব্যবসায়িক পণ্য',
+    goldWeight:'সোনার ওজন (গ্রাম)', silverWeight:'রূপার ওজন (গ্রাম)',
+    calcVal:'মূল্য:', receivables:'আপনার পাওনা অর্থ', other:'ভাড়া আয় / অন্যান্য সম্পদ',
+    liabilities:'আপনার দায়সমূহ (কর্তন)', debts:'ঋণ ও দেনা',
+    debtsTip:'শুধুমাত্র তাৎক্ষণিক/স্বল্পমেয়াদী ঋণ বাদ দেওয়া হয়।',
+    expenses:'বকেয়া খরচ (ভাড়া, বিল ইত্যাদি)', summary:'সারসংক্ষেপ ও ফলাফল',
+    totalAssets:'মোট সম্পদ', totalLiabilities:'মোট দায়',
+    netWealth:'নেট যাকাতযোগ্য সম্পদ', nisabThreshold:'নিসাব সীমা',
+    zakatDueLabel:'আপনার প্রদেয় যাকাত (2.5%)', resetAll:'সব ফিল্ড রিসেট করুন',
+    enterDetails:'উপরে আপনার তথ্য দিন',
+    zakatNote:'যাকাত তখন প্রযোজ্য যখন নেট সম্পদ নিসাব অতিক্রম করে এবং এক চান্দ্র বছর (হাওল) ধরে রাখা হয়।',
+    zakatIsDue:'✓ যাকাত প্রযোজ্য', zakatNotDue:'✗ যাকাত এখনো প্রযোজ্য নয়',
+    zakatDueNote:(n,s)=>`আপনার নেট সম্পদ (${n}) নিসাব (${s}) অতিক্রম করেছে। 2.5% যাকাত বাধ্যতামূলক।`,
+    zakatNotDueNote:(n,s)=>`আপনার নেট সম্পদ (${n}) নিসাব (${s}) এর নিচে। যাকাত বাধ্যতামূলক নয়।`,
+    zDisc:'<strong>নোট:</strong> এই ক্যালকুলেটর শুধুমাত্র গাইডেন্সের জন্য। একজন যোগ্য আলেমের পরামর্শ নিন।',
+    fitraTitle:'যাকাতুল ফিতর (ফিতরা)',
+    aboutFitraBox:'<strong style="color:#c9a84c">ফিতরা সম্পর্কে:</strong> যাকাতুল ফিতর ঈদুল ফিতরের নামাজের আগে প্রদান করা বাধ্যতামূলক দান। প্রতি ব্যক্তির জন্য প্রায় <strong>2 কেজি</strong> প্রধান খাদ্যের সমতুল্য।',
+    fitraRate:'প্রতি ব্যক্তি ফিতরা হার', fitraTip:'প্রতি বছর স্থানীয় আলেম/মসজিদ কর্তৃক নির্ধারিত।',
+    household:'পরিবারের সদস্য', adults:'প্রাপ্তবয়স্ক', children:'শিশু',
+    childrenTip:'নাবালকরা অন্তর্ভুক্ত; গৃহকর্তা তাদের পক্ষে প্রদান করেন।',
+    elderly:'বয়স্ক / নির্ভরশীল', totalHousehold:'মোট পরিবার সদস্য',
+    fitraRatePerPerson:'প্রতি ব্যক্তি ফিতরা হার', totalFitraPayable:'মোট প্রদেয় ফিতরা', totalFitraDue:'মোট ফিতরা প্রদেয়',
+    fitraNoteHtml:'ঈদুল ফিতরের নামাজের <strong style="color:#c9a84c">আগে প্রদান করতে হবে।</strong><br/>খাদ্য হিসেবেও দেওয়া যাবে।',
+    reset:'রিসেট',
+    fDisc:'<strong>নোট:</strong> ফিতরার হার প্রতি বছর স্থানীয় ইসলামিক কর্তৃপক্ষ ঘোষণা করে।',
+    exportBtn:'রিপোর্ট এক্সপোর্ট করুন', exportImage:'ছবি হিসেবে সংরক্ষণ (PNG)', exportPDF:'PDF হিসেবে সংরক্ষণ', exportLoading:'এক্সপোর্ট হচ্ছে…',
+    person:'জন', persons:'জন',
+    footer:'যত্নের সাথে তৈরি &nbsp;|&nbsp; সর্বদা একজন যোগ্য ইসলামিক আলেমের সাথে যাচাই করুন',
+    expGoldSilver:'সোনা ও রূপা', expSettings:'সেটিংস', expAssets:'সম্পদ', expLiabilities:'দায়', expResult:'যাকাত ফলাফল',
+    expFitraResult:'ফিতরা ফলাফল', expDate:'তারিখ',
+    expNisabBasis:'নিসাব ভিত্তি', expGoldPriceG:'সোনা/গ্রাম', expSilverPriceG:'রূপা/গ্রাম',
+    expNisabThreshold:'নিসাব সীমা', expGoldWeightG:'সোনার ওজন', expSilverWeightG:'রূপার ওজন',
+    expTotalAssets:'মোট সম্পদ', expTotalLiab:'মোট দায়', expNetWealth:'নেট সম্পদ',
+    expZakatDue:'প্রদেয় যাকাত (2.5%)', expStatus:'স্থিতি',
+    expFitraCurrency:'মুদ্রা', expFitraRate:'প্রতি ব্যক্তি হার', expFitraMembers:'মোট সদস্য',
+    expFitraTotal:'মোট ফিতরা', expDisclaimer:'সর্বদা একজন যোগ্য ইসলামিক আলেমের সাথে যাচাই করুন',
+  }
+};
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let currentLang = 'en';
+const currencySymbols = { INR:'₹', PKR:'PKR', USD:'$', GBP:'£', EUR:'€', SAR:'SAR', AED:'AED', CAD:'CAD', AUD:'AUD' };
+const defaultRates = {
+  INR:{gold:16331,silver:290,fitra:100}, PKR:{gold:22000,silver:250,fitra:400},
+  USD:{gold:75,silver:0.85,fitra:10}, GBP:{gold:59,silver:0.65,fitra:7},
+  EUR:{gold:68,silver:0.78,fitra:8}, SAR:{gold:280,silver:3.2,fitra:30},
+  AED:{gold:275,silver:3.1,fitra:35}, CAD:{gold:100,silver:1.15,fitra:12},
+  AUD:{gold:115,silver:1.30,fitra:14}
+};
+
+// ─── Language ─────────────────────────────────────────────────────────────────
+function setLang(lang) {
+  currentLang = lang;
+  const t = translations[lang];
+  document.documentElement.dir = t.rtl ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  document.querySelectorAll('[data-i18n]').forEach(el => { const v = t[el.dataset.i18n]; if (v && typeof v === 'string') el.textContent = v; });
+  document.querySelectorAll('[data-i18n-tip]').forEach(el => { const v = t[el.dataset.i18nTip]; if (v) el.setAttribute('data-tip', v); });
+  document.getElementById('about-fitra-box').innerHTML = t.aboutFitraBox;
+  document.getElementById('fitra-note').innerHTML = t.fitraNoteHtml;
+  document.getElementById('z-disclaimer').innerHTML = t.zDisc;
+  document.getElementById('f-disclaimer').innerHTML = t.fDisc;
+  document.getElementById('footer-text').innerHTML = t.footer;
+  document.getElementById('spinner-text').textContent = t.exportLoading;
+  calculateZakat();
+  calculateFitra();
+}
+
+// ─── Tab ──────────────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+  closeAllDropdowns();
+}
+
+// ─── Zakat ───────────────────────────────────────────────────────────────────
+function updateCurrency() {
+  const cur = document.getElementById('currency').value;
+  const sym = currencySymbols[cur];
+  const rates = defaultRates[cur];
+  document.querySelectorAll('.z-pfx, #pfx-gold, #pfx-silver, #pfx-nisab').forEach(el => el.textContent = sym);
+  document.getElementById('z-currency').textContent = ' ' + sym;
+  document.getElementById('gold-price').value = rates.gold;
+  document.getElementById('silver-price').value = rates.silver;
+  calculateZakat();
+}
+
+function nisabChanged(radio) {
+  document.getElementById('lbl-gold').classList.toggle('selected', radio.value === 'gold');
+  document.getElementById('lbl-silver').classList.toggle('selected', radio.value === 'silver');
+  calculateZakat();
+}
+
+function getNisab() {
+  const type = document.querySelector('input[name="nisab"]:checked').value;
+  return type === 'gold'
+    ? parseFloat(document.getElementById('gold-price').value || 0) * 87.48
+    : parseFloat(document.getElementById('silver-price').value || 0) * 612.36;
+}
+
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function fmt(num, sym) {
+  return sym + ' ' + num.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function calculateZakat() {
+  const t = translations[currentLang];
+  const cur = document.getElementById('currency').value;
+  const sym = currencySymbols[cur];
+  const nisab = getNisab();
+  const goldPriceG = parseFloat(document.getElementById('gold-price').value || 0);
+  const silverPriceG = parseFloat(document.getElementById('silver-price').value || 0);
+  const goldW = v('gold-weight');
+  const silverW = v('silver-weight');
+  const goldVal = goldW * goldPriceG;
+  const silverVal = silverW * silverPriceG;
+
+  // Update calculated value pills
+  document.getElementById('gold-val-display').textContent = fmt(goldVal, sym);
+  document.getElementById('silver-val-display').textContent = fmt(silverVal, sym);
+  document.getElementById('nisab-display').value = Math.round(nisab);
+
+  const assets = v('cash') + v('savings') + v('investments') + v('inventory')
+               + goldVal + silverVal + v('receivables') + v('other');
+  const liabilities = v('debts') + v('expenses');
+  const net = Math.max(0, assets - liabilities);
+  const zakat = net >= nisab ? net * 0.025 : 0;
+
+  document.getElementById('s-assets').textContent = fmt(assets, sym);
+  document.getElementById('s-liabilities').textContent = '− ' + fmt(liabilities, sym);
+  document.getElementById('s-net').textContent = fmt(net, sym);
+  document.getElementById('s-nisab').textContent = fmt(nisab, sym);
+  document.getElementById('zakat-amount').textContent = zakat.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  const badge = document.getElementById('zakat-status');
+  const note  = document.getElementById('zakat-note');
+  if (assets === 0) {
+    badge.className = 'status-badge badge-empty';
+    badge.textContent = t.enterDetails;
+    note.textContent = t.zakatNote;
+  } else if (net >= nisab) {
+    badge.className = 'status-badge badge-due';
+    badge.textContent = t.zakatIsDue;
+    note.textContent = t.zakatDueNote(fmt(net, sym), fmt(nisab, sym));
+  } else {
+    badge.className = 'status-badge badge-not-due';
+    badge.textContent = t.zakatNotDue;
+    note.textContent = t.zakatNotDueNote(fmt(net, sym), fmt(nisab, sym));
+  }
+}
+
+function resetZakat() {
+  ['cash','savings','investments','inventory','gold-weight','silver-weight','receivables','other','debts','expenses'].forEach(id => { document.getElementById(id).value = ''; });
+  calculateZakat();
+}
+
+// ─── Fitra ───────────────────────────────────────────────────────────────────
+const members = { adults:1, children:0, elderly:0 };
+
+function changeCount(type, delta) {
+  members[type] = Math.max(0, members[type] + delta);
+  if (type === 'adults' && members[type] < 1) members[type] = 1;
+  document.getElementById(type + '-count').textContent = members[type];
+  calculateFitra();
+}
+
+function updateFitraCurrency() {
+  const cur = document.getElementById('f-currency').value;
+  document.getElementById('f-pfx').textContent = currencySymbols[cur];
+  document.getElementById('fitra-rate').value = defaultRates[cur].fitra;
+  calculateFitra();
+}
+
+function calculateFitra() {
+  const t = translations[currentLang];
+  const cur = document.getElementById('f-currency').value;
+  const sym = currencySymbols[cur];
+  const rate = parseFloat(document.getElementById('fitra-rate').value) || 0;
+  const total = members.adults + members.children + members.elderly;
+  const personStr = total !== 1 ? t.persons : t.person;
+  document.getElementById('total-members').textContent = total;
+  document.getElementById('f-rate-display').textContent = fmt(rate, sym);
+  document.getElementById('fitra-amount').textContent = (total * rate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('fitra-currency-label').textContent = ' ' + sym;
+  document.getElementById('fitra-breakdown').textContent = `${total} ${personStr} × ${sym} ${rate.toFixed(2)} = ${fmt(total * rate, sym)}`;
+}
+
+function resetFitra() {
+  members.adults = 1; members.children = 0; members.elderly = 0;
+  ['adults','children','elderly'].forEach(k => document.getElementById(k + '-count').textContent = members[k]);
+  calculateFitra();
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+function toggleExport(id) {
+  const drop = document.getElementById(id);
+  const isOpen = drop.classList.contains('open');
+  closeAllDropdowns();
+  if (!isOpen) drop.classList.add('open');
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.export-dropdown').forEach(d => d.classList.remove('open'));
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.export-wrap')) closeAllDropdowns();
+});
+
+function buildExportCard(type) {
+  const t = translations[currentLang];
+  const isRTL = !!translations[currentLang].rtl;
+  const dir = isRTL ? 'rtl' : 'ltr';
+
+  const cur = document.getElementById('currency').value;
+  const sym = currencySymbols[cur];
+  const date = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'long', day:'numeric' });
+
+  const row = (label, val, color) =>
+    `<tr><td style="padding:5px 0;color:#555;font-size:0.86rem;">${label}</td><td style="padding:5px 0;text-align:right;font-weight:600;color:${color||'#1a2f3f'};">${val}</td></tr>`;
+
+  let html = '';
+
+  if (type === 'zakat') {
+    const nisabType = document.querySelector('input[name="nisab"]:checked').value;
+    const goldPriceG = parseFloat(document.getElementById('gold-price').value || 0);
+    const silverPriceG = parseFloat(document.getElementById('silver-price').value || 0);
+    const nisab = getNisab();
+    const goldW = v('gold-weight'), silverW = v('silver-weight');
+    const goldVal = goldW * goldPriceG, silverVal = silverW * silverPriceG;
+    const cashVal = v('cash'), savingsVal = v('savings'), investVal = v('investments');
+    const invVal = v('inventory'), recVal = v('receivables'), otherVal = v('other');
+    const debtsVal = v('debts'), expensesVal = v('expenses');
+    const assets = cashVal + savingsVal + investVal + invVal + goldVal + silverVal + recVal + otherVal;
+    const liabilities = debtsVal + expensesVal;
+    const net = Math.max(0, assets - liabilities);
+    const zakat = net >= nisab ? net * 0.025 : 0;
+    const isDue = assets > 0 && net >= nisab;
+    const statusText = assets === 0 ? '—' : isDue ? (t.zakatIsDue) : (t.zakatNotDue);
+    const statusColor = assets === 0 ? '#aaa' : isDue ? '#2e7d32' : '#e65100';
+
+    html = `
+      <div style="background:#203a43;color:#c9a84c;padding:9px 14px;border-radius:8px;font-weight:700;font-size:0.88rem;margin-bottom:12px;">⚙️ ${t.expSettings}</div>
+      <table style="width:100%;margin-bottom:18px;">
+        ${row(t.currency, cur + ' (' + sym + ')')}
+        ${row(t.expNisabBasis, nisabType === 'gold' ? t.goldNisab : t.silverNisab)}
+        ${row(t.expGoldPriceG, fmt(goldPriceG, sym))}
+        ${row(t.expSilverPriceG, fmt(silverPriceG, sym))}
+        ${row(t.expNisabThreshold, fmt(nisab, sym), '#c9a84c')}
+      </table>
+      <div style="background:#203a43;color:#c9a84c;padding:9px 14px;border-radius:8px;font-weight:700;font-size:0.88rem;margin-bottom:12px;">💰 ${t.expAssets}</div>
+      <table style="width:100%;margin-bottom:18px;">
+        ${cashVal > 0 ? row(t.cash, fmt(cashVal, sym)) : ''}
+        ${savingsVal > 0 ? row(t.savings, fmt(savingsVal, sym)) : ''}
+        ${investVal > 0 ? row(t.investments, fmt(investVal, sym)) : ''}
+        ${invVal > 0 ? row(t.inventory, fmt(invVal, sym)) : ''}
+        ${goldW > 0 ? row(`${t.expGoldWeightG} (${goldW}g)`, fmt(goldVal, sym)) : ''}
+        ${silverW > 0 ? row(`${t.expSilverWeightG} (${silverW}g)`, fmt(silverVal, sym)) : ''}
+        ${recVal > 0 ? row(t.receivables, fmt(recVal, sym)) : ''}
+        ${otherVal > 0 ? row(t.other, fmt(otherVal, sym)) : ''}
+        <tr style="border-top:2px solid #e0e0e0;"><td style="padding:7px 0;font-weight:700;color:#1a2f3f;">${t.expTotalAssets}</td><td style="padding:7px 0;text-align:right;font-weight:700;color:#1a2f3f;">${fmt(assets, sym)}</td></tr>
+      </table>
+      ${liabilities > 0 ? `
+      <div style="background:#203a43;color:#c9a84c;padding:9px 14px;border-radius:8px;font-weight:700;font-size:0.88rem;margin-bottom:12px;">📉 ${t.expLiabilities}</div>
+      <table style="width:100%;margin-bottom:18px;">
+        ${debtsVal > 0 ? row(t.debts, fmt(debtsVal, sym)) : ''}
+        ${expensesVal > 0 ? row(t.expenses, fmt(expensesVal, sym)) : ''}
+        <tr style="border-top:2px solid #e0e0e0;"><td style="padding:7px 0;font-weight:700;color:#c0392b;">${t.expTotalLiab}</td><td style="padding:7px 0;text-align:right;font-weight:700;color:#c0392b;">− ${fmt(liabilities, sym)}</td></tr>
+      </table>` : ''}
+      <div style="background:linear-gradient(135deg,#0f2027,#203a43);border-radius:12px;padding:22px;text-align:center;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;color:#aaa;font-size:0.82rem;margin-bottom:12px;"><span>${t.expNetWealth}</span><span style="color:#e0e0e0;font-weight:600;">${fmt(net, sym)}</span></div>
+        <div style="color:#aaa;font-size:0.82rem;margin-bottom:6px;">${t.expZakatDue}</div>
+        <div style="font-size:2rem;font-weight:700;color:#c9a84c;margin-bottom:12px;">${fmt(zakat, sym)}</div>
+        <span style="display:inline-block;padding:5px 18px;border-radius:20px;font-weight:700;font-size:0.85rem;background:${isDue?'rgba(76,175,80,0.25)':'rgba(255,152,0,0.2)'};color:${statusColor};border:1px solid ${statusColor};">${statusText}</span>
+      </div>`;
+
+  } else {
+    const fcur = document.getElementById('f-currency').value;
+    const fsym = currencySymbols[fcur];
+    const rate = parseFloat(document.getElementById('fitra-rate').value) || 0;
+    const total = members.adults + members.children + members.elderly;
+    const fitraTotal = total * rate;
+    html = `
+      <div style="background:#203a43;color:#c9a84c;padding:9px 14px;border-radius:8px;font-weight:700;font-size:0.88rem;margin-bottom:12px;">⚙️ ${t.expSettings}</div>
+      <table style="width:100%;margin-bottom:18px;">
+        ${row(t.expFitraCurrency, fcur + ' (' + fsym + ')')}
+        ${row(t.expFitraRate, fmt(rate, fsym))}
+      </table>
+      <div style="background:#203a43;color:#c9a84c;padding:9px 14px;border-radius:8px;font-weight:700;font-size:0.88rem;margin-bottom:12px;">👨‍👩‍👧‍👦 ${t.household}</div>
+      <table style="width:100%;margin-bottom:18px;">
+        ${row(t.adults, members.adults)}
+        ${row(t.children, members.children)}
+        ${row(t.elderly, members.elderly)}
+        <tr style="border-top:2px solid #e0e0e0;"><td style="padding:7px 0;font-weight:700;color:#1a2f3f;">${t.expFitraMembers}</td><td style="padding:7px 0;text-align:right;font-weight:700;color:#1a2f3f;">${total}</td></tr>
+      </table>
+      <div style="background:linear-gradient(135deg,#0f2027,#203a43);border-radius:12px;padding:22px;text-align:center;margin-top:4px;">
+        <div style="color:#aaa;font-size:0.82rem;margin-bottom:6px;">${t.expFitraTotal}</div>
+        <div style="font-size:2rem;font-weight:700;color:#c9a84c;margin-bottom:8px;">${fmt(fitraTotal, fsym)}</div>
+        <div style="color:#aaa;font-size:0.78rem;">${total} ${total!==1?t.persons:t.person} × ${fsym} ${rate.toFixed(2)}</div>
+      </div>`;
+  }
+
+  const titleText = type === 'zakat' ? t.expResult : t.expFitraResult;
+
+  return `
+    <div dir="${dir}" style="width:680px;background:#fff;padding:36px;font-family:'Segoe UI',Arial,sans-serif;color:#222;border-radius:12px;">
+      <div style="text-align:center;border-bottom:2px solid #c9a84c;padding-bottom:18px;margin-bottom:24px;">
+        <div style="font-size:1.5rem;color:#c9a84c;font-family:serif;margin-bottom:6px;">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+        <h1 style="color:#1a2f3f;font-size:1.5rem;margin:0 0 6px;font-weight:700;">${titleText}</h1>
+        <p style="color:#888;font-size:0.78rem;margin:0;">${t.expDate}: ${date}</p>
+      </div>
+      ${html}
+      <div style="text-align:center;margin-top:22px;padding-top:14px;border-top:1px solid #eee;font-size:0.72rem;color:#aaa;">
+        ${t.expDisclaimer}
+      </div>
+    </div>`;
+}
+
+async function doExport(format, type) {
+  closeAllDropdowns();
+  if (typeof html2canvas === 'undefined' || (format === 'pdf' && typeof window.jspdf === 'undefined')) {
+    alert('Export libraries are loading. Please check your internet connection and try again.');
+    return;
+  }
+
+  const spinner = document.getElementById('export-spinner');
+  spinner.classList.add('show');
+
+  try {
+    const render = document.getElementById('export-render');
+    render.innerHTML = buildExportCard(type);
+    render.style.left = '-9999px';
+    render.style.display = 'block';
+
+    await new Promise(r => setTimeout(r, 100)); // allow paint
+
+    const canvas = await html2canvas(render.firstElementChild, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff',
+      logging: false, width: 680
+    });
+
+    if (format === 'image') {
+      const dataUrl = canvas.toDataURL('image/png');
+      const fileName = `zakat-${type}-report.png`;
+      if (window.ZakatInterface) {
+        window.ZakatInterface.saveFile(dataUrl.split(',')[1], fileName, 'image/png');
+      } else {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = dataUrl;
+        link.click();
+      }
+    } else {
+      const { jsPDF } = window.jspdf;
+      const pageW = 210;
+      const imgH = (canvas.height * pageW) / canvas.width;
+      const pdf = new jsPDF('p', 'mm', [pageW, imgH]);
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pageW, imgH);
+      const fileName = `zakat-${type}-report.pdf`;
+      if (window.ZakatInterface) {
+        window.ZakatInterface.saveFile(pdf.output('datauristring').split(',')[1], fileName, 'application/pdf');
+      } else {
+        pdf.save(fileName);
+      }
+    }
+  } catch (err) {
+    alert('Export failed: ' + err.message);
+  } finally {
+    spinner.classList.remove('show');
+    document.getElementById('export-render').innerHTML = '';
+  }
+}
+
+// Init
+calculateZakat();
+calculateFitra();
+
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

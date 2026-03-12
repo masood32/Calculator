@@ -1,0 +1,24 @@
+{
+  "name": "Zakat & Fitra Calculator",
+  "short_name": "Zakat Calc",
+  "description": "Calculate your Islamic Zakat and Fitra in 5 languages",
+  "start_url": "/zakat-fitra-calculator.html",
+  "display": "standalone",
+  "background_color": "#0f2027",
+  "theme_color": "#c9a84c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
